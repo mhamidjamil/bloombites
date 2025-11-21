@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ImagePicker from '@/components/image-picker';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -214,6 +215,7 @@ export default function AdminItemsPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Price (PKR)</TableHead>
+                <TableHead>Variations</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -221,7 +223,7 @@ export default function AdminItemsPage() {
               {items.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="text-center py-10 text-muted-foreground"
                   >
                     No items found.
@@ -251,6 +253,32 @@ export default function AdminItemsPage() {
                       item.category}
                   </TableCell>
                   <TableCell>{item.price.toLocaleString()}</TableCell>
+                  <TableCell>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help font-medium">
+                            {item.variants?.length || 0}
+                          </span>
+                        </TooltipTrigger>
+                        {item.variants && item.variants.length > 0 && (
+                          <TooltipContent className="max-w-xs">
+                            <div className="space-y-1">
+                              <p className="font-medium text-xs mb-2">Variations:</p>
+                              {item.variants.map((variant, index) => (
+                                <div key={index} className="text-xs">
+                                  <span className="font-medium">{variant.name}</span>
+                                  <span className="text-muted-foreground ml-2">
+                                    PKR {variant.price.toLocaleString()}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
