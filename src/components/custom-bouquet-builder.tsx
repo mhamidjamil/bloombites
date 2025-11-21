@@ -131,15 +131,19 @@ export default function CustomBouquetBuilder() {
                               checked={isSelected}
                               className="absolute top-2 right-2 z-10"
                             />
-                            <div className="aspect-square relative w-full mb-2">
+                            <div className="aspect-square relative w-full mb-2 bg-muted rounded-md overflow-hidden">
                               {((item.images && item.images.length > 0) || item.image) ? (
                                 <Image
                                   src={(item.images && item.images[0]) || item.image!}
                                   alt={item.name}
                                   fill
-                                  className="object-cover rounded-md"
+                                  className="object-contain p-2"
                                 />
-                              ) : null}
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                                  No Image
+                                </div>
+                              )}
                             </div>
                             <h3 className="font-semibold text-sm truncate">
                               {item.name}
