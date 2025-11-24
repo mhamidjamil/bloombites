@@ -1,21 +1,28 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { CustomItem, Category } from '@/lib/types';
+import type { CustomItem, Category, ItemVariant } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
-import { Bot, Sparkles, ShoppingCart, Trash2, Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Bot, Sparkles, ShoppingCart, Trash2, Loader2, Plus, Minus } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { generateBouquetDescription } from '@/ai/flows/generate-bouquet-description';
 import { Skeleton } from './ui/skeleton';
 import { getCategories, getCustomItems } from '@/lib/db-service';
 
+type SelectedBouquetItem = {
+  item: CustomItem;
+  quantity: number;
+  selectedVariant?: ItemVariant;
+};
+
 export default function CustomBouquetBuilder() {
-  const [selectedItems, setSelectedItems] = useState<CustomItem[]>([]);
+  const [selectedItems, setSelectedItems] = useState<SelectedBouquetItem[]>([]);
   const [instructions, setInstructions] = useState('');
   const [aiName, setAiName] = useState('');
   const [aiDescription, setAiDescription] = useState('');
@@ -50,14 +57,56 @@ export default function CustomBouquetBuilder() {
   }, [toast]);
 
   const handleItemToggle = (item: CustomItem) => {
+    setSelectedItems((prev) => {
+      const existingIndex = prev.findIndex((selected) => selected.item.id === item.id);
+      
+      if (existingIndex >= 0) {
+        // Remove item if it exists
+        return prev.filter((_, index) => index !== existingIndex);
+      } else {
+        // Add new item with default quantity 1 and first variant if available
+        const selectedItem: SelectedBouquetItem = {
+          item,
+          quantity: 1,
+          selectedVariant: item.variants && item.variants.length > 0 ? item.variants[0] : undefined,
+        };
+        return [...prev, selectedItem];
+      }
+    });
+  };
+
+  const updateItemQuantity = (itemId: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      setSelectedItems((prev) => prev.filter((selected) => selected.item.id !== itemId));
+      return;
+    }
+    
     setSelectedItems((prev) =>
-      prev.some((i) => i.id === item.id)
-        ? prev.filter((i) => i.id !== item.id)
-        : [...prev, item]
+      prev.map((selected) =>
+        selected.item.id === itemId
+          ? { ...selected, quantity: newQuantity }
+          : selected
+      )
     );
   };
 
-  const totalPrice = selectedItems.reduce((acc, item) => acc + item.price, 0);
+  const updateItemVariant = (itemId: string, variant: ItemVariant | undefined) => {
+    setSelectedItems((prev) =>
+      prev.map((selected) =>
+        selected.item.id === itemId
+          ? { ...selected, selectedVariant: variant }
+          : selected
+      )
+    );
+  };
+
+  const getItemPrice = (selectedItem: SelectedBouquetItem) => {
+    return selectedItem.selectedVariant ? selectedItem.selectedVariant.price : selectedItem.item.price;
+  };
+
+  const totalPrice = selectedItems.reduce((acc, selectedItem) => 
+    acc + (getItemPrice(selectedItem) * selectedItem.quantity), 0
+  );
 
   const handleGenerateDescription = async () => {
     if (selectedItems.length < 2) {
@@ -72,7 +121,7 @@ export default function CustomBouquetBuilder() {
     setIsGenerating(true);
     try {
       const result = await generateBouquetDescription({
-        items: selectedItems.map((i) => i.name),
+        items: selectedItems.map((selected) => selected.item.name),
         theme: instructions || 'A lovely gift',
       });
       setAiName(result.name);
@@ -118,7 +167,7 @@ export default function CustomBouquetBuilder() {
                     .filter((item) => item.category === cat.slug)
                     .map((item) => {
                       const isSelected = selectedItems.some(
-                        (i) => i.id === item.id
+                        (selected) => selected.item.id === item.id
                       );
                       return (
                         <Card
@@ -148,9 +197,19 @@ export default function CustomBouquetBuilder() {
                             <h3 className="font-semibold text-sm truncate">
                               {item.name}
                             </h3>
-                            <p className="text-xs text-muted-foreground">
-                              PKR {item.price}
-                            </p>
+                            <div className="flex justify-between items-center">
+                              <p className="text-xs text-muted-foreground">
+                                PKR {item.price}
+                                {item.variants && item.variants.length > 0 && (
+                                  <span className="text-xs text-muted-foreground"> + variants</span>
+                                )}
+                              </p>
+                              {isSelected && (
+                                <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
+                                  {selectedItems.find(s => s.item.id === item.id)?.quantity || 1}
+                                </span>
+                              )}
+                            </div>
                           </CardContent>
                         </Card>
                       );
@@ -174,26 +233,77 @@ export default function CustomBouquetBuilder() {
             <h2 className="text-2xl font-bold font-headline mb-4">
               Your Custom Bouquet
             </h2>
-            <div className="min-h-[100px] max-h-[200px] overflow-y-auto space-y-2 pr-2">
+            <div className="min-h-[200px] max-h-[400px] overflow-y-auto space-y-3 pr-2">
               {selectedItems.length > 0 ? (
-                selectedItems.map((item) => (
+                selectedItems.map((selectedItem) => (
                   <div
-                    key={item.id}
-                    className="flex justify-between items-center text-sm"
+                    key={selectedItem.item.id}
+                    className="border rounded-lg p-3 space-y-2"
                   >
-                    <span>{item.name}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">
-                        PKR {item.price}
-                      </span>
+                    <div className="flex justify-between items-start">
+                      <span className="font-medium text-sm">{selectedItem.item.name}</span>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6"
-                        onClick={() => handleItemToggle(item)}
+                        className="h-6 w-6 text-destructive"
+                        onClick={() => handleItemToggle(selectedItem.item)}
                       >
-                        <Trash2 className="h-3 w-3 text-destructive" />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
+                    </div>
+
+                    {/* Variant Selection */}
+                    {selectedItem.item.variants && selectedItem.item.variants.length > 0 && (
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">Variant:</label>
+                        <Select
+                          value={selectedItem.selectedVariant?.name || ''}
+                          onValueChange={(value) => {
+                            const variant = selectedItem.item.variants?.find(v => v.name === value);
+                            updateItemVariant(selectedItem.item.id, variant);
+                          }}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue placeholder="Select variant" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {selectedItem.item.variants.map((variant) => (
+                              <SelectItem key={variant.name} value={variant.name}>
+                                {variant.name} - PKR {variant.price}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Quantity Controls */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs text-muted-foreground">Qty:</label>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => updateItemQuantity(selectedItem.item.id, selectedItem.quantity - 1)}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-8 text-center text-sm">{selectedItem.quantity}</span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => updateItemQuantity(selectedItem.item.id, selectedItem.quantity + 1)}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      <span className="text-sm font-medium">
+                        PKR {getItemPrice(selectedItem) * selectedItem.quantity}
+                      </span>
                     </div>
                   </div>
                 ))
