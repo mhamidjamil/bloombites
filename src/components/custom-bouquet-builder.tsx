@@ -41,6 +41,7 @@ export default function CustomBouquetBuilder() {
   const [items, setItems] = useState<CustomItem[]>([]);
   const [bouquetStyles, setBouquetStyles] = useState<BouquetStyle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [dynamicHeading, setDynamicHeading] = useState('Design your own unique snack bouquet from scratch');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -95,6 +96,28 @@ export default function CustomBouquetBuilder() {
 
     loadData();
   }, [toast]);
+
+  // Dynamic heading effect
+  useEffect(() => {
+    const headings = [
+      'Design your own unique snack bouquet from scratch',
+      'Design your own custom snack bouquet from scratch',
+      'Design your own personalized snack bouquet from scratch',
+      'Design your own special snack bouquet from scratch',
+      'Design your own exclusive snack bouquet from scratch',
+      'Design your own premium snack bouquet from scratch',
+      'Design your own deluxe snack bouquet from scratch',
+      'Design your own bespoke snack bouquet from scratch',
+    ];
+
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % headings.length;
+      setDynamicHeading(headings[currentIndex]);
+    }, 3000); // Change every 3 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleItemToggle = (item: CustomItem) => {
     setSelectedItems((prev) => {
@@ -182,12 +205,12 @@ export default function CustomBouquetBuilder() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Header Section - Compact */}
-      <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold font-headline mb-2">
-          Design your own unique snack bouquet from scratch
+      {/* Dynamic Header Section */}
+      <div className="text-center mb-8">
+        <h1 className="text-4xl md:text-5xl font-bold font-headline text-accent-foreground mb-4 transition-all duration-500 ease-in-out">
+          {dynamicHeading}
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Pick your favorite items and we'll craft it for you!
         </p>
       </div>
