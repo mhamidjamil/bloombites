@@ -49,6 +49,15 @@ export type CustomItem = {
   variants?: ItemVariant[];
 };
 
+export type BouquetStyle = {
+  id: string;
+  name: string;
+  description: string;
+  image?: string;
+  price: number;
+  isEnabled?: boolean;
+};
+
 export type CartItem = {
   id: string; // Unique ID for the cart item instance
   product: Bouquet | CustomBouquet;
