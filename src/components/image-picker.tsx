@@ -16,12 +16,10 @@ export default function ImagePicker({ onImageSelected }: ImagePickerProps) {
         <UploadCloud className="h-4 w-4" />
         <Label className="text-sm font-medium">Upload Image</Label>
       </div>
-      <ImageUpload
-        onUploadComplete={onImageSelected}
-        className="w-full"
-      />
+      <ImageUpload onUploadComplete={onImageSelected} className="w-full" />
       <p className="text-xs text-muted-foreground">
-        Upload a JPEG, PNG, or WebP image (max 5MB). Images will be automatically optimized and stored locally.
+        Upload a JPEG, PNG, or WebP image (max 5MB). Images will be
+        automatically optimized and stored locally.
       </p>
     </div>
   );

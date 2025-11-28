@@ -29,7 +29,12 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import ImagePicker from '@/components/image-picker';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -141,7 +146,11 @@ export default function AdminItemsPage() {
   };
 
   const handleSave = async () => {
-    if (!formData.name || formData.price === undefined || formData.price === null) {
+    if (
+      !formData.name ||
+      formData.price === undefined ||
+      formData.price === null
+    ) {
       toast({
         variant: 'destructive',
         title: 'Validation Error',
@@ -234,7 +243,7 @@ export default function AdminItemsPage() {
                 <TableRow key={item.id}>
                   <TableCell>
                     <div className="w-10 h-10 relative bg-muted rounded overflow-hidden">
-                      {((item.images && item.images.length > 0) || item.image) ? (
+                      {(item.images && item.images.length > 0) || item.image ? (
                         <img
                           src={(item.images && item.images[0]) || item.image}
                           alt={item.name}
@@ -264,10 +273,14 @@ export default function AdminItemsPage() {
                         {item.variants && item.variants.length > 0 && (
                           <TooltipContent className="max-w-xs">
                             <div className="space-y-1">
-                              <p className="font-medium text-xs mb-2">Variations:</p>
+                              <p className="font-medium text-xs mb-2">
+                                Variations:
+                              </p>
                               {item.variants.map((variant, index) => (
                                 <div key={index} className="text-xs">
-                                  <span className="font-medium">{variant.name}</span>
+                                  <span className="font-medium">
+                                    {variant.name}
+                                  </span>
                                   <span className="text-muted-foreground ml-2">
                                     PKR {variant.price.toLocaleString()}
                                   </span>
@@ -342,12 +355,15 @@ export default function AdminItemsPage() {
                     }}
                     onChange={(e) => {
                       const value = e.target.value;
-                      setFormData({ ...formData, price: value ? Number(value) : 0 });
+                      setFormData({
+                        ...formData,
+                        price: value ? Number(value) : 0,
+                      });
                     }}
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Category</Label>
                 <Select
@@ -373,7 +389,7 @@ export default function AdminItemsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-4 border rounded-md p-4">
                 <div className="flex justify-between items-center">
                   <Label>Variants (Optional)</Label>
@@ -387,7 +403,7 @@ export default function AdminItemsPage() {
                     Add Variant
                   </Button>
                 </div>
-                
+
                 {formData.variants && formData.variants.length > 0 ? (
                   <div className="space-y-3">
                     {formData.variants.map((variant, index) => (
@@ -434,13 +450,16 @@ export default function AdminItemsPage() {
                   </div>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Images (Max 5)</Label>
                 <div className="border p-4 rounded-md">
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
                     {(formData.images || []).map((imageUrl, index) => (
-                      <div key={index} className="relative w-20 h-20 rounded overflow-hidden flex-shrink-0">
+                      <div
+                        key={index}
+                        className="relative w-20 h-20 rounded overflow-hidden flex-shrink-0"
+                      >
                         <img
                           src={imageUrl}
                           className="w-full h-full object-cover"
@@ -454,7 +473,9 @@ export default function AdminItemsPage() {
                             const currentImages = formData.images || [];
                             setFormData({
                               ...formData,
-                              images: currentImages.filter((_, i) => i !== index)
+                              images: currentImages.filter(
+                                (_, i) => i !== index
+                              ),
                             });
                           }}
                         >
@@ -475,7 +496,7 @@ export default function AdminItemsPage() {
                           const currentImages = formData.images || [];
                           setFormData({
                             ...formData,
-                            images: [...currentImages, url]
+                            images: [...currentImages, url],
                           });
                         }}
                       />
@@ -483,7 +504,8 @@ export default function AdminItemsPage() {
                   )}
                   {(formData.images || []).length >= 5 && (
                     <p className="text-xs text-muted-foreground">
-                      Maximum of 5 images reached. Delete an image to add a new one.
+                      Maximum of 5 images reached. Delete an image to add a new
+                      one.
                     </p>
                   )}
                 </div>

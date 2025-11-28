@@ -7,8 +7,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Bot, Sparkles, ShoppingCart, Trash2, Loader2, Plus, Minus, ArrowLeft, ArrowRight } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
+import {
+  Bot,
+  Sparkles,
+  ShoppingCart,
+  Trash2,
+  Loader2,
+  Plus,
+  Minus,
+  ArrowLeft,
+  ArrowRight,
+} from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { generateBouquetDescription } from '@/ai/flows/generate-bouquet-description';
@@ -41,7 +57,9 @@ export default function CustomBouquetBuilder() {
   const [items, setItems] = useState<CustomItem[]>([]);
   const [bouquetStyles, setBouquetStyles] = useState<BouquetStyle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [dynamicHeading, setDynamicHeading] = useState('Design your own unique snack bouquet from scratch');
+  const [dynamicHeading, setDynamicHeading] = useState(
+    'Design your own unique snack bouquet from scratch'
+  );
   const { toast } = useToast();
 
   useEffect(() => {
@@ -53,7 +71,7 @@ export default function CustomBouquetBuilder() {
         ]);
         setCategories(fetchedCategories);
         setItems(fetchedItems);
-        
+
         // Mock bouquet styles - in a real app, these would come from the database
         const mockStyles: BouquetStyle[] = [
           {
@@ -101,24 +119,38 @@ export default function CustomBouquetBuilder() {
   useEffect(() => {
     if (categories.length === 0) return; // Wait for categories to load
 
-    const adjectives = ['unique', 'custom', 'personalized', 'special', 'exclusive', 'premium', 'deluxe', 'bespoke'];
-    const categoryNames = categories.map(cat => cat.name.toLowerCase());
+    const adjectives = [
+      'unique',
+      'custom',
+      'personalized',
+      'special',
+      'exclusive',
+      'premium',
+      'deluxe',
+      'bespoke',
+    ];
+    const categoryNames = categories.map((cat) => cat.name.toLowerCase());
 
     // Create dynamic headings using category names
     const headings = [];
-    adjectives.forEach(adjective => {
-      categoryNames.forEach(category => {
-        headings.push(`Design your own ${adjective} ${category} bouquet from scratch`);
+    adjectives.forEach((adjective) => {
+      categoryNames.forEach((category) => {
+        headings.push(
+          `Design your own ${adjective} ${category} bouquet from scratch`
+        );
       });
     });
 
     // If no categories, fallback to original headings
-    const finalHeadings = headings.length > 0 ? headings : [
-      'Design your own unique snack bouquet from scratch',
-      'Design your own custom snack bouquet from scratch',
-      'Design your own personalized snack bouquet from scratch',
-      'Design your own special snack bouquet from scratch',
-    ];
+    const finalHeadings =
+      headings.length > 0
+        ? headings
+        : [
+            'Design your own unique snack bouquet from scratch',
+            'Design your own custom snack bouquet from scratch',
+            'Design your own personalized snack bouquet from scratch',
+            'Design your own special snack bouquet from scratch',
+          ];
 
     let currentIndex = 0;
     const interval = setInterval(() => {
@@ -131,8 +163,10 @@ export default function CustomBouquetBuilder() {
 
   const handleItemToggle = (item: CustomItem) => {
     setSelectedItems((prev) => {
-      const existingIndex = prev.findIndex((selected) => selected.item.id === item.id);
-      
+      const existingIndex = prev.findIndex(
+        (selected) => selected.item.id === item.id
+      );
+
       if (existingIndex >= 0) {
         // Remove item if it exists
         return prev.filter((_, index) => index !== existingIndex);
@@ -141,7 +175,10 @@ export default function CustomBouquetBuilder() {
         const selectedItem: SelectedBouquetItem = {
           item,
           quantity: 1,
-          selectedVariant: item.variants && item.variants.length > 0 ? item.variants[0] : undefined,
+          selectedVariant:
+            item.variants && item.variants.length > 0
+              ? item.variants[0]
+              : undefined,
         };
         return [...prev, selectedItem];
       }
@@ -150,10 +187,12 @@ export default function CustomBouquetBuilder() {
 
   const updateItemQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
-      setSelectedItems((prev) => prev.filter((selected) => selected.item.id !== itemId));
+      setSelectedItems((prev) =>
+        prev.filter((selected) => selected.item.id !== itemId)
+      );
       return;
     }
-    
+
     setSelectedItems((prev) =>
       prev.map((selected) =>
         selected.item.id === itemId
@@ -163,7 +202,10 @@ export default function CustomBouquetBuilder() {
     );
   };
 
-  const updateItemVariant = (itemId: string, variant: ItemVariant | undefined) => {
+  const updateItemVariant = (
+    itemId: string,
+    variant: ItemVariant | undefined
+  ) => {
     setSelectedItems((prev) =>
       prev.map((selected) =>
         selected.item.id === itemId
@@ -174,11 +216,15 @@ export default function CustomBouquetBuilder() {
   };
 
   const getItemPrice = (selectedItem: SelectedBouquetItem) => {
-    return selectedItem.selectedVariant ? selectedItem.selectedVariant.price : selectedItem.item.price;
+    return selectedItem.selectedVariant
+      ? selectedItem.selectedVariant.price
+      : selectedItem.item.price;
   };
 
-  const itemsTotal = selectedItems.reduce((acc, selectedItem) => 
-    acc + (getItemPrice(selectedItem) * selectedItem.quantity), 0
+  const itemsTotal = selectedItems.reduce(
+    (acc, selectedItem) =>
+      acc + getItemPrice(selectedItem) * selectedItem.quantity,
+    0
   );
 
   const totalPrice = itemsTotal + (selectedStyle?.price || 0);
@@ -228,28 +274,39 @@ export default function CustomBouquetBuilder() {
       {/* Progress and Step Details in One Row */}
       <div className="flex items-center justify-between mb-6 bg-muted/30 rounded-lg p-4">
         <div className="flex items-center space-x-4">
-          <div className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold ${
-            currentStage === 'items' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-          }`}>
+          <div
+            className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold ${
+              currentStage === 'items'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground'
+            }`}
+          >
             1
           </div>
-          <div className={`h-0.5 w-12 ${currentStage === 'style' ? 'bg-primary' : 'bg-muted'}`} />
-          <div className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold ${
-            currentStage === 'style' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-          }`}>
+          <div
+            className={`h-0.5 w-12 ${currentStage === 'style' ? 'bg-primary' : 'bg-muted'}`}
+          />
+          <div
+            className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold ${
+              currentStage === 'style'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground'
+            }`}
+          >
             2
           </div>
         </div>
 
         <div className="text-center flex-1 mx-6">
           <h2 className="text-xl font-semibold mb-1">
-            {currentStage === 'items' ? 'Select Your Items' : 'Choose Presentation Style'}
+            {currentStage === 'items'
+              ? 'Select Your Items'
+              : 'Choose Presentation Style'}
           </h2>
           <p className="text-sm text-muted-foreground">
             {currentStage === 'items'
               ? 'Pick items and customize quantities'
-              : 'Select how your bouquet will be presented'
-            }
+              : 'Select how your bouquet will be presented'}
           </p>
         </div>
 
@@ -266,10 +323,7 @@ export default function CustomBouquetBuilder() {
             </Button>
           )}
           {currentStage === 'items' && selectedItems.length > 0 && (
-            <Button
-              size="sm"
-              onClick={() => setCurrentStage('style')}
-            >
+            <Button size="sm" onClick={() => setCurrentStage('style')}>
               Next
               <ArrowRight className="ml-1 h-3 w-3" />
             </Button>
@@ -322,9 +376,13 @@ export default function CustomBouquetBuilder() {
                                   className="absolute top-2 right-2 z-10"
                                 />
                                 <div className="aspect-square relative w-full mb-2 bg-muted rounded-md overflow-hidden">
-                                  {((item.images && item.images.length > 0) || item.image) ? (
+                                  {(item.images && item.images.length > 0) ||
+                                  item.image ? (
                                     <Image
-                                      src={(item.images && item.images[0]) || item.image!}
+                                      src={
+                                        (item.images && item.images[0]) ||
+                                        item.image!
+                                      }
                                       alt={item.name}
                                       fill
                                       className="object-contain p-2"
@@ -341,13 +399,19 @@ export default function CustomBouquetBuilder() {
                                 <div className="flex justify-between items-center">
                                   <p className="text-xs text-muted-foreground">
                                     PKR {item.price}
-                                    {item.variants && item.variants.length > 0 && (
-                                      <span className="text-xs text-muted-foreground"> + variants</span>
-                                    )}
+                                    {item.variants &&
+                                      item.variants.length > 0 && (
+                                        <span className="text-xs text-muted-foreground">
+                                          {' '}
+                                          + variants
+                                        </span>
+                                      )}
                                   </p>
                                   {isSelected && (
                                     <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
-                                      {selectedItems.find(s => s.item.id === item.id)?.quantity || 1}
+                                      {selectedItems.find(
+                                        (s) => s.item.id === item.id
+                                      )?.quantity || 1}
                                     </span>
                                   )}
                                 </div>
@@ -355,7 +419,8 @@ export default function CustomBouquetBuilder() {
                             </Card>
                           );
                         })}
-                      {items.filter((item) => item.category === cat.slug).length === 0 && (
+                      {items.filter((item) => item.category === cat.slug)
+                        .length === 0 && (
                         <div className="col-span-full text-center py-8 text-muted-foreground">
                           No items available in this category.
                         </div>
@@ -381,9 +446,15 @@ export default function CustomBouquetBuilder() {
                       <div className="w-16 h-16 bg-muted rounded-full mx-auto mb-4 flex items-center justify-center">
                         <Sparkles className="w-8 h-8 text-muted-foreground" />
                       </div>
-                      <h3 className="font-semibold text-lg mb-2">{style.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">{style.description}</p>
-                      <p className="text-lg font-bold text-primary">PKR {style.price}</p>
+                      <h3 className="font-semibold text-lg mb-2">
+                        {style.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {style.description}
+                      </p>
+                      <p className="text-lg font-bold text-primary">
+                        PKR {style.price}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -400,7 +471,8 @@ export default function CustomBouquetBuilder() {
                     <Bot className="h-5 w-5" /> AI Assistant
                   </h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Add a theme or occasion below, then generate a name and description for your unique bouquet!
+                    Add a theme or occasion below, then generate a name and
+                    description for your unique bouquet!
                   </p>
 
                   {isGenerating ? (
@@ -427,7 +499,9 @@ export default function CustomBouquetBuilder() {
                     className="w-full"
                   >
                     <Sparkles className="mr-2 h-4 w-4" />
-                    {isGenerating ? 'Generating...' : 'Generate Name & Description'}
+                    {isGenerating
+                      ? 'Generating...'
+                      : 'Generate Name & Description'}
                   </Button>
                 </CardContent>
               </Card>
@@ -463,11 +537,18 @@ export default function CustomBouquetBuilder() {
                   <div className="space-y-2 max-h-80 overflow-y-auto">
                     {selectedItems.length > 0 ? (
                       selectedItems.map((selectedItem) => (
-                        <div key={selectedItem.item.id} className="flex items-center justify-between py-2 border-b border-border/50">
+                        <div
+                          key={selectedItem.item.id}
+                          className="flex items-center justify-between py-2 border-b border-border/50"
+                        >
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{selectedItem.item.name}</p>
+                            <p className="text-sm font-medium truncate">
+                              {selectedItem.item.name}
+                            </p>
                             {selectedItem.selectedVariant && (
-                              <p className="text-xs text-muted-foreground">{selectedItem.selectedVariant.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {selectedItem.selectedVariant.name}
+                              </p>
                             )}
                           </div>
                           <div className="flex items-center gap-2 ml-2">
@@ -476,16 +557,28 @@ export default function CustomBouquetBuilder() {
                                 variant="outline"
                                 size="icon"
                                 className="h-5 w-5"
-                                onClick={() => updateItemQuantity(selectedItem.item.id, selectedItem.quantity - 1)}
+                                onClick={() =>
+                                  updateItemQuantity(
+                                    selectedItem.item.id,
+                                    selectedItem.quantity - 1
+                                  )
+                                }
                               >
                                 <Minus className="h-3 w-3" />
                               </Button>
-                              <span className="w-6 text-center text-xs">{selectedItem.quantity}</span>
+                              <span className="w-6 text-center text-xs">
+                                {selectedItem.quantity}
+                              </span>
                               <Button
                                 variant="outline"
                                 size="icon"
                                 className="h-5 w-5"
-                                onClick={() => updateItemQuantity(selectedItem.item.id, selectedItem.quantity + 1)}
+                                onClick={() =>
+                                  updateItemQuantity(
+                                    selectedItem.item.id,
+                                    selectedItem.quantity + 1
+                                  )
+                                }
                               >
                                 <Plus className="h-3 w-3" />
                               </Button>
@@ -494,7 +587,9 @@ export default function CustomBouquetBuilder() {
                               variant="ghost"
                               size="icon"
                               className="h-5 w-5 text-destructive"
-                              onClick={() => handleItemToggle(selectedItem.item)}
+                              onClick={() =>
+                                handleItemToggle(selectedItem.item)
+                              }
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
@@ -512,7 +607,9 @@ export default function CustomBouquetBuilder() {
                     <div className="border-t pt-3 mt-3">
                       <div className="flex justify-between items-center text-sm">
                         <span className="font-medium">Items Total:</span>
-                        <span className="font-semibold">PKR {itemsTotal.toLocaleString()}</span>
+                        <span className="font-semibold">
+                          PKR {itemsTotal.toLocaleString()}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -528,13 +625,19 @@ export default function CustomBouquetBuilder() {
                             <Sparkles className="w-4 h-4 text-muted-foreground" />
                           </div>
                           <div className="flex-1">
-                            <p className="font-medium text-sm">{selectedStyle.name}</p>
-                            <p className="text-xs text-muted-foreground">{selectedStyle.description}</p>
+                            <p className="font-medium text-sm">
+                              {selectedStyle.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {selectedStyle.description}
+                            </p>
                           </div>
                         </div>
                         <div className="flex justify-between items-center mt-2 pt-2 border-t">
                           <span className="text-xs">Style Price:</span>
-                          <span className="font-medium text-sm">PKR {selectedStyle.price}</span>
+                          <span className="font-medium text-sm">
+                            PKR {selectedStyle.price}
+                          </span>
                         </div>
                       </div>
                     ) : (
@@ -546,7 +649,9 @@ export default function CustomBouquetBuilder() {
                     <div className="border-t pt-3 space-y-3">
                       <div className="flex justify-between items-center">
                         <span className="font-medium">Total Price:</span>
-                        <span className="font-bold text-lg">PKR {totalPrice.toLocaleString()}</span>
+                        <span className="font-bold text-lg">
+                          PKR {totalPrice.toLocaleString()}
+                        </span>
                       </div>
 
                       <Button
