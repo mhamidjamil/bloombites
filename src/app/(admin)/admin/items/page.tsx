@@ -39,7 +39,7 @@ import {
   addSiteImage,
   getCategories,
 } from '@/lib/db-service';
-import type { CustomItem, Category } from '@/lib/types';
+import type { CustomItem, Category, ItemVariant } from '@/lib/types';
 
 export default function AdminItemsPage() {
   const [items, setItems] = useState<CustomItem[]>([]);
@@ -55,6 +55,7 @@ export default function AdminItemsPage() {
     price: undefined,
     category: '',
     image: '',
+    variants: [],
   });
 
   const loadData = useCallback(async () => {
@@ -83,6 +84,34 @@ export default function AdminItemsPage() {
 
   const itemCategories = categories.filter((c) => c.type === 'item');
 
+  const addVariant = () => {
+    const currentVariants = formData.variants || [];
+    setFormData({
+      ...formData,
+      variants: [...currentVariants, { name: '', price: 0 }],
+    });
+  };
+
+  const removeVariant = (index: number) => {
+    const currentVariants = formData.variants || [];
+    setFormData({
+      ...formData,
+      variants: currentVariants.filter((_, i) => i !== index),
+    });
+  };
+
+  const updateVariant = (
+    index: number,
+    field: 'name' | 'price',
+    value: any
+  ) => {
+    const currentVariants = [...(formData.variants || [])];
+    if (currentVariants[index]) {
+      currentVariants[index] = { ...currentVariants[index], [field]: value };
+      setFormData({ ...formData, variants: currentVariants });
+    }
+  };
+
   const openNewDialog = () => {
     setEditingItem(null);
     setFormData({
@@ -90,6 +119,7 @@ export default function AdminItemsPage() {
       price: undefined,
       category: itemCategories[0]?.slug || 'chocolates',
       image: '',
+      variants: [],
     });
     setIsDialogOpen(true);
   };
@@ -278,6 +308,67 @@ export default function AdminItemsPage() {
                   }}
                 />
               </div>
+            </div>
+            
+            <div className="space-y-4 border rounded-md p-4">
+              <div className="flex justify-between items-center">
+                <Label>Variants (Optional)</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addVariant}
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Variant
+                </Button>
+              </div>
+              
+              {formData.variants && formData.variants.length > 0 ? (
+                <div className="space-y-3">
+                  {formData.variants.map((variant, index) => (
+                    <div key={index} className="flex gap-2 items-end">
+                      <div className="flex-1 space-y-1">
+                        <Label className="text-xs">Variant Name</Label>
+                        <Input
+                          value={variant.name}
+                          placeholder="e.g. Small (50g)"
+                          onChange={(e) =>
+                            updateVariant(index, 'name', e.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="w-24 space-y-1">
+                        <Label className="text-xs">Price</Label>
+                        <Input
+                          type="number"
+                          value={variant.price}
+                          onChange={(e) =>
+                            updateVariant(
+                              index,
+                              'price',
+                              Number(e.target.value)
+                            )
+                          }
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive mb-0.5"
+                        onClick={() => removeVariant(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground text-center py-2">
+                  No variants added. The main price above will be used.
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Category</Label>
