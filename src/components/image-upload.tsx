@@ -35,6 +35,8 @@ export default function ImageUpload({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [cropMode, setCropMode] = useState<'free' | 'square' | 'landscape' | 'portrait'>('free');
+  const [skipCropping, setSkipCropping] = useState(false);
   const { toast } = useToast();
 
   const onCropComplete = useCallback(
@@ -49,6 +51,10 @@ export default function ImageUpload({
       const file = e.target.files[0];
       const imageDataUrl = await readFile(file);
       setImageSrc(imageDataUrl);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setCropMode('free');
+      setSkipCropping(false);
       setIsOpen(true);
       // Reset input value to allow selecting same file again
       e.target.value = '';
@@ -68,17 +74,30 @@ export default function ImageUpload({
   };
 
   const handleUpload = async () => {
-    if (!imageSrc || !croppedAreaPixels) return;
+    if (!imageSrc) return;
 
     try {
       setIsUploading(true);
 
-      // 1. Get cropped image blob
-      const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
-      if (!croppedBlob) throw new Error('Could not crop image');
+      let fileToUpload: File;
+
+      if (skipCropping) {
+        // Convert data URL to blob and then to file
+        const response = await fetch(imageSrc);
+        const blob = await response.blob();
+        fileToUpload = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+      } else {
+        // Use cropped image
+        if (!croppedAreaPixels) return;
+
+        // 1. Get cropped image blob
+        const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
+        if (!croppedBlob) throw new Error('Could not crop image');
+        fileToUpload = croppedBlob as File;
+      }
 
       // 2. Compress image
-      const compressedFile = await imageCompression(croppedBlob as File, {
+      const compressedFile = await imageCompression(fileToUpload, {
         maxSizeMB: 1,
         maxWidthOrHeight: 1920,
         useWebWorker: true,
@@ -159,41 +178,99 @@ export default function ImageUpload({
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Crop Image</DialogTitle>
+            <DialogTitle>Edit Image</DialogTitle>
             <DialogDescription>
-              Adjust the image crop and zoom before uploading.
+              Adjust the image crop and zoom, or upload as-is.
             </DialogDescription>
           </DialogHeader>
 
+          {/* Crop Mode Selection */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Button
+              variant={skipCropping ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSkipCropping(!skipCropping)}
+            >
+              {skipCropping ? "✓ Upload Full Image" : "Upload Full Image"}
+            </Button>
+            {!skipCropping && (
+              <>
+                <Button
+                  variant={cropMode === 'free' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCropMode('free')}
+                >
+                  Free Crop
+                </Button>
+                <Button
+                  variant={cropMode === 'square' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCropMode('square')}
+                >
+                  Square (1:1)
+                </Button>
+                <Button
+                  variant={cropMode === 'landscape' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCropMode('landscape')}
+                >
+                  Landscape (16:9)
+                </Button>
+                <Button
+                  variant={cropMode === 'portrait' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCropMode('portrait')}
+                >
+                  Portrait (3:4)
+                </Button>
+              </>
+            )}
+          </div>
+
           <div className="relative w-full h-[400px] bg-black rounded-md overflow-hidden">
-            {imageSrc && (
+            {imageSrc && !skipCropping && (
               <Cropper
                 image={imageSrc}
                 crop={crop}
                 zoom={zoom}
-                aspect={4 / 3} // Default aspect ratio, maybe make prop?
+                aspect={
+                  cropMode === 'square' ? 1 :
+                  cropMode === 'landscape' ? 16 / 9 :
+                  cropMode === 'portrait' ? 3 / 4 :
+                  undefined // free crop
+                }
                 onCropChange={setCrop}
                 onCropComplete={onCropComplete}
                 onZoomChange={setZoom}
               />
             )}
+            {imageSrc && skipCropping && (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-center text-white">
+                  <div className="text-lg font-semibold mb-2">Full Image Upload</div>
+                  <div className="text-sm opacity-75">The entire image will be uploaded without cropping</div>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="py-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground w-12">Zoom</span>
-              <Slider
-                value={[zoom]}
-                min={1}
-                max={3}
-                step={0.1}
-                onValueChange={(value) => setZoom(value[0])}
-                className="flex-1"
-              />
+          {!skipCropping && (
+            <div className="py-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground w-12">Zoom</span>
+                <Slider
+                  value={[zoom]}
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  onValueChange={(value) => setZoom(value[0])}
+                  className="flex-1"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <DialogFooter>
             <Button
@@ -205,7 +282,7 @@ export default function ImageUpload({
             </Button>
             <Button onClick={handleUpload} disabled={isUploading}>
               {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Upload
+              {skipCropping ? 'Upload Full Image' : 'Upload Cropped Image'}
             </Button>
           </DialogFooter>
         </DialogContent>
