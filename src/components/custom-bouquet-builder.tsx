@@ -24,6 +24,8 @@ import {
   Minus,
   ArrowLeft,
   ArrowRight,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -32,6 +34,7 @@ import { Skeleton } from './ui/skeleton';
 import { getCategories, getCustomItems } from '@/lib/db-service';
 
 type SelectedBouquetItem = {
+  id: string; // Unique identifier for each selected item instance
   item: CustomItem;
   quantity: number;
   selectedVariant?: ItemVariant;
@@ -57,6 +60,7 @@ export default function CustomBouquetBuilder() {
   const [items, setItems] = useState<CustomItem[]>([]);
   const [bouquetStyles, setBouquetStyles] = useState<BouquetStyle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [dynamicHeading, setDynamicHeading] = useState(
     'Design your own unique snack bouquet from scratch'
   );
@@ -132,7 +136,7 @@ export default function CustomBouquetBuilder() {
     const categoryNames = categories.map((cat) => cat.name.toLowerCase());
 
     // Create dynamic headings using category names
-    const headings = [];
+    const headings: string[] = [];
     adjectives.forEach((adjective) => {
       categoryNames.forEach((category) => {
         headings.push(
@@ -161,58 +165,65 @@ export default function CustomBouquetBuilder() {
     return () => clearInterval(interval);
   }, [categories]);
 
-  const handleItemToggle = (item: CustomItem) => {
+  const toggleItemExpansion = (itemId: string) => {
+    setExpandedItems((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  const getQuantity = (itemId: string, variantName?: string) => {
+    const found = selectedItems.find(
+      (item) =>
+        item.item.id === itemId && item.selectedVariant?.name === variantName
+    );
+    return found ? found.quantity : 0;
+  };
+
+  const currentUpdateItemQuantity = (
+    item: CustomItem,
+    newQuantity: number,
+    variant?: ItemVariant
+  ) => {
     setSelectedItems((prev) => {
+      // Check if this specific combination exists
       const existingIndex = prev.findIndex(
-        (selected) => selected.item.id === item.id
+        (selected) =>
+          selected.item.id === item.id &&
+          selected.selectedVariant?.name === variant?.name
       );
 
+      if (newQuantity <= 0) {
+        // Remove
+        if (existingIndex >= 0) {
+          return prev.filter((_, i) => i !== existingIndex);
+        }
+        return prev;
+      }
+
+      // Update or Add
       if (existingIndex >= 0) {
-        // Remove item if it exists
-        return prev.filter((_, index) => index !== existingIndex);
-      } else {
-        // Add new item with default quantity 1 and first variant if available
-        const selectedItem: SelectedBouquetItem = {
-          item,
-          quantity: 1,
-          selectedVariant:
-            item.variants && item.variants.length > 0
-              ? item.variants[0]
-              : undefined,
+        // Update
+        const newItems = [...prev];
+        newItems[existingIndex] = {
+          ...newItems[existingIndex],
+          quantity: newQuantity,
         };
-        return [...prev, selectedItem];
+        return newItems;
+      } else {
+        // Add
+        return [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            item,
+            quantity: newQuantity,
+            selectedVariant: variant,
+          },
+        ];
       }
     });
-  };
-
-  const updateItemQuantity = (itemId: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      setSelectedItems((prev) =>
-        prev.filter((selected) => selected.item.id !== itemId)
-      );
-      return;
-    }
-
-    setSelectedItems((prev) =>
-      prev.map((selected) =>
-        selected.item.id === itemId
-          ? { ...selected, quantity: newQuantity }
-          : selected
-      )
-    );
-  };
-
-  const updateItemVariant = (
-    itemId: string,
-    variant: ItemVariant | undefined
-  ) => {
-    setSelectedItems((prev) =>
-      prev.map((selected) =>
-        selected.item.id === itemId
-          ? { ...selected, selectedVariant: variant }
-          : selected
-      )
-    );
   };
 
   const getItemPrice = (selectedItem: SelectedBouquetItem) => {
@@ -357,25 +368,26 @@ export default function CustomBouquetBuilder() {
                 </TabsList>
                 {categories.map((cat) => (
                   <TabsContent key={cat.slug} value={cat.slug}>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
                       {items
                         .filter((item) => item.category === cat.slug)
                         .map((item) => {
-                          const isSelected = selectedItems.some(
-                            (selected) => selected.item.id === item.id
-                          );
+                          const hasVariants =
+                            item.variants && item.variants.length > 0;
+                          const isExpanded = expandedItems.includes(item.id);
+                          const totalQty = selectedItems
+                            .filter((s) => s.item.id === item.id)
+                            .reduce((acc, s) => acc + s.quantity, 0);
+                          const isSelected = totalQty > 0;
+
                           return (
                             <Card
                               key={item.id}
-                              onClick={() => handleItemToggle(item)}
-                              className={`cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary' : ''}`}
+                              className={`transition-all duration-300 ${isSelected ? 'ring-2 ring-primary border-primary/50' : ''}`}
                             >
-                              <CardContent className="p-2 relative">
-                                <Checkbox
-                                  checked={isSelected}
-                                  className="absolute top-2 right-2 z-10"
-                                />
-                                <div className="aspect-square relative w-full mb-2 bg-muted rounded-md overflow-hidden">
+                              <CardContent className="p-3">
+                                {/* Image Section */}
+                                <div className="aspect-square relative w-full mb-3 bg-muted rounded-md overflow-hidden group">
                                   {(item.images && item.images.length > 0) ||
                                   item.image ? (
                                     <Image
@@ -385,34 +397,175 @@ export default function CustomBouquetBuilder() {
                                       }
                                       alt={item.name}
                                       fill
-                                      className="object-contain p-2"
+                                      className="object-contain p-2 transition-transform duration-300 group-hover:scale-105"
                                     />
                                   ) : (
                                     <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
                                       No Image
                                     </div>
                                   )}
-                                </div>
-                                <h3 className="font-semibold text-sm truncate">
-                                  {item.name}
-                                </h3>
-                                <div className="flex justify-between items-center">
-                                  <p className="text-xs text-muted-foreground">
-                                    PKR {item.price}
-                                    {item.variants &&
-                                      item.variants.length > 0 && (
-                                        <span className="text-xs text-muted-foreground">
-                                          {' '}
-                                          + variants
-                                        </span>
-                                      )}
-                                  </p>
                                   {isSelected && (
-                                    <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
-                                      {selectedItems.find(
-                                        (s) => s.item.id === item.id
-                                      )?.quantity || 1}
-                                    </span>
+                                    <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-full shadow-sm">
+                                      {totalQty}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Header Section */}
+                                <div className="flex justify-between items-start mb-2">
+                                  <div>
+                                    <h3
+                                      className="font-semibold text-sm truncate pr-2 max-w-[140px]"
+                                      title={item.name}
+                                    >
+                                      {item.name}
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground">
+                                      from PKR {item.price}
+                                    </p>
+                                  </div>
+                                  {hasVariants && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 -mr-1"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleItemExpansion(item.id);
+                                      }}
+                                    >
+                                      {isExpanded ? (
+                                        <ChevronUp className="h-4 w-4" />
+                                      ) : (
+                                        <ChevronDown className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  )}
+                                </div>
+
+                                {/* Controls Section */}
+                                <div className="space-y-2">
+                                  {/* Simple Mode (No variants OR Toggle Header for Base Item) */}
+                                  {(!hasVariants || isExpanded) && (
+                                    <div className="flex items-center justify-between bg-muted/30 p-2 rounded-md">
+                                      <span className="text-xs font-medium">
+                                        Base Item{' '}
+                                        <span className="text-muted-foreground font-normal">
+                                          ({item.price})
+                                        </span>
+                                      </span>
+                                      <div className="flex items-center gap-1">
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6"
+                                          onClick={() =>
+                                            currentUpdateItemQuantity(
+                                              item,
+                                              getQuantity(item.id) - 1
+                                            )
+                                          }
+                                        >
+                                          <Minus className="h-3 w-3" />
+                                        </Button>
+                                        <span className="w-4 text-center text-xs font-medium">
+                                          {getQuantity(item.id)}
+                                        </span>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6"
+                                          onClick={() =>
+                                            currentUpdateItemQuantity(
+                                              item,
+                                              getQuantity(item.id) + 1
+                                            )
+                                          }
+                                        >
+                                          <Plus className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Variants List (Only if Expanded) */}
+                                  {hasVariants && isExpanded && (
+                                    <div className="space-y-2 border-t pt-2 mt-2">
+                                      {item.variants?.map((variant, idx) => (
+                                        <div
+                                          key={idx}
+                                          className="flex items-center justify-between bg-muted/30 p-2 rounded-md"
+                                        >
+                                          <div className="flex flex-col">
+                                            <span
+                                              className="text-xs font-medium truncate max-w-[80px]"
+                                              title={variant.name}
+                                            >
+                                              {variant.name}
+                                            </span>
+                                            <span className="text-[10px] text-muted-foreground">
+                                              PKR {variant.price}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center gap-1">
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-6 w-6"
+                                              onClick={() =>
+                                                currentUpdateItemQuantity(
+                                                  item,
+                                                  getQuantity(
+                                                    item.id,
+                                                    variant.name
+                                                  ) - 1,
+                                                  variant
+                                                )
+                                              }
+                                            >
+                                              <Minus className="h-3 w-3" />
+                                            </Button>
+                                            <span className="w-4 text-center text-xs font-medium">
+                                              {getQuantity(
+                                                item.id,
+                                                variant.name
+                                              )}
+                                            </span>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-6 w-6"
+                                              onClick={() =>
+                                                currentUpdateItemQuantity(
+                                                  item,
+                                                  getQuantity(
+                                                    item.id,
+                                                    variant.name
+                                                  ) + 1,
+                                                  variant
+                                                )
+                                              }
+                                            >
+                                              <Plus className="h-3 w-3" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Show expand prompt if closed */}
+                                  {hasVariants && !isExpanded && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="w-full text-xs h-7"
+                                      onClick={() =>
+                                        toggleItemExpansion(item.id)
+                                      }
+                                    >
+                                      View Variations
+                                    </Button>
                                   )}
                                 </div>
                               </CardContent>
@@ -538,7 +691,7 @@ export default function CustomBouquetBuilder() {
                     {selectedItems.length > 0 ? (
                       selectedItems.map((selectedItem) => (
                         <div
-                          key={selectedItem.item.id}
+                          key={selectedItem.id}
                           className="flex items-center justify-between py-2 border-b border-border/50"
                         >
                           <div className="flex-1 min-w-0">
@@ -558,9 +711,10 @@ export default function CustomBouquetBuilder() {
                                 size="icon"
                                 className="h-5 w-5"
                                 onClick={() =>
-                                  updateItemQuantity(
-                                    selectedItem.item.id,
-                                    selectedItem.quantity - 1
+                                  currentUpdateItemQuantity(
+                                    selectedItem.item,
+                                    selectedItem.quantity - 1,
+                                    selectedItem.selectedVariant
                                   )
                                 }
                               >
@@ -574,9 +728,10 @@ export default function CustomBouquetBuilder() {
                                 size="icon"
                                 className="h-5 w-5"
                                 onClick={() =>
-                                  updateItemQuantity(
-                                    selectedItem.item.id,
-                                    selectedItem.quantity + 1
+                                  currentUpdateItemQuantity(
+                                    selectedItem.item,
+                                    selectedItem.quantity + 1,
+                                    selectedItem.selectedVariant
                                   )
                                 }
                               >
@@ -588,7 +743,11 @@ export default function CustomBouquetBuilder() {
                               size="icon"
                               className="h-5 w-5 text-destructive"
                               onClick={() =>
-                                handleItemToggle(selectedItem.item)
+                                currentUpdateItemQuantity(
+                                  selectedItem.item,
+                                  0,
+                                  selectedItem.selectedVariant
+                                )
                               }
                             >
                               <Trash2 className="h-3 w-3" />
