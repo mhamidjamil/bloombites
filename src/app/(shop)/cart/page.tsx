@@ -41,8 +41,7 @@ export default function CartPage() {
           <div className="lg:col-span-2 space-y-4">
             {items.map((item) => {
               const imageId =
-                'product' in item.product &&
-                item.product.id !== 'custom-bouquet'
+                'images' in item.product
                   ? item.product.images[0]
                   : 'custom-builder-promo';
               const image = placeholderImages.find((p) => p.id === imageId);
