@@ -1,13 +1,25 @@
 'use client';
 
-import { motion, useScroll, useTransform, useSpring, useInView } from 'framer-motion';
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useSpring,
+  useInView,
+} from 'framer-motion';
 import { useRef, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 interface ScrollRevealProps {
   children: ReactNode;
   className?: string;
-  animation?: 'fade-up' | 'fade-in' | 'zoom-in' | '3d-flip' | 'slide-in-right' | 'slide-in-left';
+  animation?:
+    | 'fade-up'
+    | 'fade-in'
+    | 'zoom-in'
+    | '3d-flip'
+    | 'slide-in-right'
+    | 'slide-in-left';
   delay?: number;
   duration?: number;
   threshold?: number;
@@ -40,17 +52,17 @@ export const ScrollReveal = ({
       visible: { opacity: 1, scale: 1 },
     },
     '3d-flip': {
-      hidden: { 
-        opacity: 0, 
-        rotateX: 45, 
+      hidden: {
+        opacity: 0,
+        rotateX: 45,
         y: 40,
-        scale: 0.9
+        scale: 0.9,
       },
-      visible: { 
-        opacity: 1, 
-        rotateX: 0, 
-        y: 0, 
-        scale: 1 
+      visible: {
+        opacity: 1,
+        rotateX: 0,
+        y: 0,
+        scale: 1,
       },
     },
     'slide-in-right': {
@@ -69,10 +81,10 @@ export const ScrollReveal = ({
       initial="hidden"
       animate={isInView ? 'visible' : 'hidden'}
       variants={variants[animation]}
-      transition={{ 
-        duration, 
-        delay, 
-        ease: [0.22, 1, 0.36, 1] // Custom ease for "premium" feel
+      transition={{
+        duration,
+        delay,
+        ease: [0.22, 1, 0.36, 1], // Custom ease for "premium" feel
       }}
       className={cn('[perspective:1000px]', className)} // Add perspective for 3d transforms
       style={{ transformStyle: 'preserve-3d' }}
@@ -82,21 +94,29 @@ export const ScrollReveal = ({
   );
 };
 
-export const ParallaxImage = ({ src, alt, className }: { src: string; alt: string; className?: string }) => {
+export const ParallaxImage = ({
+  src,
+  alt,
+  className,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+}) => {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({
     target: ref,
-    offset: ["start end", "end start"]
+    offset: ['start end', 'end start'],
   });
 
-  const y = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
+  const y = useTransform(scrollYProgress, [0, 1], ['-10%', '10%']);
   const scale = useTransform(scrollYProgress, [0, 0.5, 1], [1, 1.1, 1]);
 
   return (
-    <div ref={ref} className={cn("overflow-hidden", className)}>
-      <motion.div style={{ y, scale }} className="w-full h-full"> 
-         <img src={src} alt={alt} className="w-full h-full object-cover" />
+    <div ref={ref} className={cn('overflow-hidden', className)}>
+      <motion.div style={{ y, scale }} className="w-full h-full">
+        <img src={src} alt={alt} className="w-full h-full object-cover" />
       </motion.div>
     </div>
   );
-}
+};

@@ -5,14 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { testimonials } from '@/lib/mock-data';
-import {
-  ArrowRight,
-  Star,
-  Truck,
-  Heart,
-  Palette,
-  Quote,
-} from 'lucide-react';
+import { ArrowRight, Star, Truck, Heart, Palette, Quote } from 'lucide-react';
 import BouquetCard from '@/components/bouquet-card';
 import {
   Carousel,
@@ -106,13 +99,15 @@ export default function Home() {
     featured.length > 0 ? featured : products.length === 0 ? mockFeatured : [];
 
   return (
-    <div className="flex flex-col min-h-screen bg-black"> {/* Set bg-black to hide flashing white before loader leaves */}
-      
+    <div className="flex flex-col min-h-screen bg-black">
+      {' '}
+      {/* Set bg-black to hide flashing white before loader leaves */}
       {/* 1. Full Screen Loader */}
       <SiteLoader isLoading={!dataLoaded} />
-
       {/* Hero Section */}
-      <section className="relative h-[95vh] w-full overflow-hidden bg-black font-sans"> {/* Increased height for impact */}
+      <section className="relative h-[95vh] w-full overflow-hidden bg-black font-sans">
+        {' '}
+        {/* Increased height for impact */}
         {/* Background Slideshow */}
         <div className="absolute inset-0 w-full h-full">
           {displayHeroImages.map((url, idx) => (
@@ -131,10 +126,8 @@ export default function Home() {
             </div>
           ))}
         </div>
-
         <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
         <div className="absolute inset-0 z-20 bg-gradient-to-r from-black/70 to-transparent" />
-
         <div className="relative z-30 container mx-auto h-full flex flex-col justify-center px-4 md:px-6">
           <div className="max-w-4xl">
             <ScrollReveal animation="3d-flip" duration={1} delay={0.5}>
@@ -151,7 +144,7 @@ export default function Home() {
                 {heroSubtitle}
               </p>
             </ScrollReveal>
-            
+
             <ScrollReveal animation="fade-up" delay={1.0} duration={0.8}>
               <div className="mt-12 flex flex-col sm:flex-row gap-6">
                 <Button
@@ -172,12 +165,16 @@ export default function Home() {
               </div>
             </ScrollReveal>
           </div>
-          
+
           {/* Scroll Down Indicator */}
-           <ScrollReveal animation="fade-in" delay={1.5} className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/50 flex flex-col items-center gap-2">
-              <span className="text-xs uppercase tracking-widest">Scroll</span>
-              <div className="w-[1px] h-12 bg-gradient-to-b from-white to-transparent" />
-           </ScrollReveal>
+          <ScrollReveal
+            animation="fade-in"
+            delay={1.5}
+            className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/50 flex flex-col items-center gap-2"
+          >
+            <span className="text-xs uppercase tracking-widest">Scroll</span>
+            <div className="w-[1px] h-12 bg-gradient-to-b from-white to-transparent" />
+          </ScrollReveal>
 
           {/* Slide Indicators */}
           {displayHeroImages.length > 1 && (
@@ -194,22 +191,42 @@ export default function Home() {
           )}
         </div>
       </section>
-
       {/* Why Choose Us */}
       <section className="py-32 bg-background relative overflow-hidden">
         <div className="container mx-auto px-4 relative z-10">
           <ScrollReveal animation="fade-up" className="mb-20 text-center">
-             <span className="text-primary text-sm font-bold uppercase tracking-widest mb-4 block">Why Choose BloomBites?</span>
-             <h2 className="text-4xl md:text-5xl font-headline font-bold">The Art of Gifting</h2>
+            <span className="text-primary text-sm font-bold uppercase tracking-widest mb-4 block">
+              Why Choose BloomBites?
+            </span>
+            <h2 className="text-4xl md:text-5xl font-headline font-bold">
+              The Art of Gifting
+            </h2>
           </ScrollReveal>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {[
-              { icon: Palette, title: 'Fully Customizable', desc: 'Create a unique gift by handpicking snacks, chocolates, and decorations to match their taste perfectly.' },
-              { icon: Truck, title: 'Fast Delivery', desc: 'We ensure your fresh and beautiful bouquet arrives on time to make their day special.' },
-              { icon: Heart, title: 'Made with Love', desc: 'Each arrangement is handcrafted by our skilled artisans with attention to detail and care.' }
+              {
+                icon: Palette,
+                title: 'Fully Customizable',
+                desc: 'Create a unique gift by handpicking snacks, chocolates, and decorations to match their taste perfectly.',
+              },
+              {
+                icon: Truck,
+                title: 'Fast Delivery',
+                desc: 'We ensure your fresh and beautiful bouquet arrives on time to make their day special.',
+              },
+              {
+                icon: Heart,
+                title: 'Made with Love',
+                desc: 'Each arrangement is handcrafted by our skilled artisans with attention to detail and care.',
+              },
             ].map((item, idx) => (
-              <ScrollReveal key={idx} animation="fade-up" delay={idx * 0.2} duration={0.8}>
+              <ScrollReveal
+                key={idx}
+                animation="fade-up"
+                delay={idx * 0.2}
+                duration={0.8}
+              >
                 <div className="group flex flex-col items-center text-center p-8 rounded-3xl bg-card/50 border border-border/50 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-500 hover:-translate-y-2">
                   <div className="h-20 w-20 bg-primary/10 rounded-2xl rotate-3 group-hover:rotate-6 transition-transform duration-500 flex items-center justify-center mb-8 text-primary">
                     <item.icon className="h-10 w-10" />
@@ -226,7 +243,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* Featured Bouquets - 3D Carousel Style Showcase */}
       <section className="py-32 bg-white dark:bg-muted/30">
         <div className="container mx-auto px-4">
@@ -241,15 +257,24 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {displayFeatured.map((bouquet, idx) => (
-              <ScrollReveal key={bouquet.id} animation="3d-flip" delay={idx * 0.15} duration={0.8}>
+              <ScrollReveal
+                key={bouquet.id}
+                animation="3d-flip"
+                delay={idx * 0.15}
+                duration={0.8}
+              >
                 <div className="h-full">
-                    <BouquetCard bouquet={bouquet} />
+                  <BouquetCard bouquet={bouquet} />
                 </div>
               </ScrollReveal>
             ))}
           </div>
 
-          <ScrollReveal animation="fade-up" delay={0.4} className="text-center mt-20">
+          <ScrollReveal
+            animation="fade-up"
+            delay={0.4}
+            className="text-center mt-20"
+          >
             <Button
               asChild
               variant="default"
@@ -264,7 +289,6 @@ export default function Home() {
           </ScrollReveal>
         </div>
       </section>
-
       {/* Custom Bouquet Builder Promo */}
       {(content?.featured?.showPromo ?? true) && (
         <section className="py-32 bg-background overflow-hidden">
@@ -283,8 +307,8 @@ export default function Home() {
                       </h2>
                       <p className="text-xl text-muted-foreground mb-10 leading-relaxed max-w-lg">
                         Design a truly personal gift with our Custom Bouquet
-                        Builder. Choose from hundreds of premium snacks, chocolates,
-                        and unique add-ons.
+                        Builder. Choose from hundreds of premium snacks,
+                        chocolates, and unique add-ons.
                       </p>
                       <div>
                         <Button
@@ -297,22 +321,26 @@ export default function Home() {
                       </div>
                     </ScrollReveal>
                   </div>
-                  
+
                   <div className="relative h-[500px] lg:h-auto order-1 lg:order-2 overflow-hidden">
-                   <ScrollReveal animation="zoom-in" delay={0.3} className="w-full h-full"> 
-                    <Image
-                      src={
-                        content?.featured?.promoImageUrl ||
-                        placeholderImages.find(
-                          (p) => p.id === 'custom-builder-promo'
-                        )?.imageUrl ||
-                        '/placeholder.jpg'
-                      }
-                      alt="Custom bouquet builder"
-                      fill
-                      className="object-cover transition-transform duration-[2s] hover:scale-110"
-                      unoptimized={!!content?.featured?.promoImageUrl}
-                    />
+                    <ScrollReveal
+                      animation="zoom-in"
+                      delay={0.3}
+                      className="w-full h-full"
+                    >
+                      <Image
+                        src={
+                          content?.featured?.promoImageUrl ||
+                          placeholderImages.find(
+                            (p) => p.id === 'custom-builder-promo'
+                          )?.imageUrl ||
+                          '/placeholder.jpg'
+                        }
+                        alt="Custom bouquet builder"
+                        fill
+                        className="object-cover transition-transform duration-[2s] hover:scale-110"
+                        unoptimized={!!content?.featured?.promoImageUrl}
+                      />
                     </ScrollReveal>
                     <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-l from-black/10 to-transparent" />
                   </div>
@@ -322,12 +350,13 @@ export default function Home() {
           </div>
         </section>
       )}
-
       {/* Testimonials Section */}
       <section className="py-32 bg-muted/30">
         <div className="container mx-auto px-4">
           <ScrollReveal animation="fade-up" className="text-center mb-20">
-             <h2 className="text-3xl md:text-5xl font-headline font-bold">Loved by our customers</h2>
+            <h2 className="text-3xl md:text-5xl font-headline font-bold">
+              Loved by our customers
+            </h2>
           </ScrollReveal>
 
           <div className="max-w-6xl mx-auto">
@@ -360,7 +389,10 @@ export default function Home() {
                             </p>
                             <div className="flex text-primary mt-1">
                               {[...Array(5)].map((_, i) => (
-                                <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                                <Star
+                                  key={i}
+                                  className="h-3.5 w-3.5 fill-current"
+                                />
                               ))}
                             </div>
                           </div>

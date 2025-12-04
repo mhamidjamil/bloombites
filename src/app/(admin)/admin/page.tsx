@@ -493,7 +493,7 @@ export default function AdminDashboardPage() {
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="mt-4 p-4 border border-dashed rounded-md bg-muted/20 hover:bg-muted/40 transition-colors">
                   <div className="text-sm font-medium mb-4 flex items-center gap-2">
                     <ImageIcon className="h-4 w-4" />
