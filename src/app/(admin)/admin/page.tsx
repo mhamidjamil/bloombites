@@ -492,12 +492,14 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
                   ))}
-                  <div className="p-2 border border-dashed rounded-md bg-muted/20 hover:bg-muted/40 transition-colors">
-                    <div className="text-xs text-center mb-2 font-medium">
-                      Add Image
-                    </div>
-                    <ImagePicker onImageSelected={addHeroImage} />
+                </div>
+                
+                <div className="mt-4 p-4 border border-dashed rounded-md bg-muted/20 hover:bg-muted/40 transition-colors">
+                  <div className="text-sm font-medium mb-4 flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    Add New Hero Image
                   </div>
+                  <ImagePicker onImageSelected={addHeroImage} />
                 </div>
               </div>
 
