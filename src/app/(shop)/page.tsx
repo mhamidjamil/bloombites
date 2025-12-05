@@ -165,7 +165,7 @@ export default function Home() {
                   asChild
                   size="lg"
                   variant="outline"
-                  className="bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white text-xl px-10 py-7 rounded-full shadow-lg backdrop-blur-md transition-all hover:scale-105"
+                  className="bg-transparent text-white border-white/30 hover:bg-white hover:text-black hover:border-white text-xl px-10 py-7 rounded-full shadow-lg backdrop-blur-md transition-all hover:scale-105"
                 >
                   <Link href="/build">Build Your Own</Link>
                 </Button>
@@ -228,13 +228,13 @@ export default function Home() {
       </section>
 
       {/* Featured Bouquets - 3D Carousel Style Showcase */}
-      <section className="py-32 bg-muted/30">
+      <section className="py-32 bg-white dark:bg-muted/30">
         <div className="container mx-auto px-4">
           <ScrollReveal animation="fade-up" className="text-center mb-20">
             <h2 className="text-4xl md:text-6xl font-headline font-bold text-foreground mb-6">
               Featured Collections
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto font-medium">
               Our most popular arrangements, curated to bring joy and delight.
             </p>
           </ScrollReveal>
