@@ -44,7 +44,8 @@ export type CustomItem = {
   name: string;
   category: string;
   price: number;
-  image: string; // URL to image
+  image?: string; // Primary image (for backward compatibility)
+  images?: string[]; // Multiple images (new)
   variants?: ItemVariant[];
 };
 

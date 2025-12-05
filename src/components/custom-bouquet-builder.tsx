@@ -132,14 +132,14 @@ export default function CustomBouquetBuilder() {
                               className="absolute top-2 right-2 z-10"
                             />
                             <div className="aspect-square relative w-full mb-2">
-                              {item.image && (
+                              {((item.images && item.images.length > 0) || item.image) ? (
                                 <Image
-                                  src={item.image}
+                                  src={(item.images && item.images[0]) || item.image!}
                                   alt={item.name}
                                   fill
                                   className="object-cover rounded-md"
                                 />
-                              )}
+                              ) : null}
                             </div>
                             <h3 className="font-semibold text-sm truncate">
                               {item.name}
