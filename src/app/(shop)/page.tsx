@@ -21,7 +21,6 @@ import {
 } from '@/lib/db-service';
 import type { Bouquet } from '@/lib/types';
 import { featuredBouquets as mockFeatured } from '@/lib/mock-data';
-import { placeholderImages } from '@/lib/placeholder-images';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { SiteLoader } from '@/components/ui/site-loader';
 
@@ -74,8 +73,8 @@ export default function Home() {
   } else if (content?.hero?.imageUrl) {
     displayHeroImages = [content.hero.imageUrl];
   } else {
-    const defaultHero = placeholderImages.find((p) => p.id === 'hero-bouquet');
-    displayHeroImages = [defaultHero?.imageUrl || '/placeholder.jpg'];
+    // Use local hero image from public folder as default
+    displayHeroImages = ['/hero-default.png'];
   }
 
   // Hero Slideshow Logic
@@ -331,10 +330,7 @@ export default function Home() {
                       <Image
                         src={
                           content?.featured?.promoImageUrl ||
-                          placeholderImages.find(
-                            (p) => p.id === 'custom-builder-promo'
-                          )?.imageUrl ||
-                          '/placeholder.jpg'
+                          '/custom-builder-promo.jpg'
                         }
                         alt="Custom bouquet builder"
                         fill
