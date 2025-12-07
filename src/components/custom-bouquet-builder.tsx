@@ -1,27 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import { customItems } from '@/lib/mock-data';
-import type { CustomItem } from '@/lib/types';
+import { useState, useEffect } from 'react';
+import type { CustomItem, Category } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
-import { placeholderImages } from '@/lib/placeholder-images';
-import { Bot, Sparkles, ShoppingCart, Trash2 } from 'lucide-react';
+import { Bot, Sparkles, ShoppingCart, Trash2, Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { generateBouquetDescription } from '@/ai/flows/generate-bouquet-description';
 import { Skeleton } from './ui/skeleton';
-
-const categories = [
-  { id: 'chocolates', name: 'Chocolates' },
-  { id: 'snacks', name: 'Snacks' },
-  { id: 'dry-fruits', name: 'Dry Fruits' },
-  { id: 'notes-cards', name: 'Notes / Cards' },
-  { id: 'premium-add-ons', name: 'Premium Add-Ons' },
-];
+import { getCategories, getCustomItems } from '@/lib/db-service';
 
 export default function CustomBouquetBuilder() {
   const [selectedItems, setSelectedItems] = useState<CustomItem[]>([]);
@@ -29,7 +20,34 @@ export default function CustomBouquetBuilder() {
   const [aiName, setAiName] = useState('');
   const [aiDescription, setAiDescription] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [items, setItems] = useState<CustomItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [fetchedCategories, fetchedItems] = await Promise.all([
+          getCategories(),
+          getCustomItems(),
+        ]);
+        setCategories(fetchedCategories);
+        setItems(fetchedItems);
+      } catch (error) {
+        console.error('Failed to load data:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to load categories and items.',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [toast]);
 
   const handleItemToggle = (item: CustomItem) => {
     setSelectedItems((prev) =>
@@ -75,61 +93,74 @@ export default function CustomBouquetBuilder() {
     <div className="grid lg:grid-cols-3 gap-8">
       {/* Item Selection */}
       <div className="lg:col-span-2">
-        <Tabs defaultValue="chocolates">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-32" />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <Tabs defaultValue={categories[0]?.slug || 'chocolates'}>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
+              {categories.map((cat) => (
+                <TabsTrigger key={cat.slug} value={cat.slug}>
+                  {cat.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
             {categories.map((cat) => (
-              <TabsTrigger key={cat.id} value={cat.id}>
-                {cat.name}
-              </TabsTrigger>
+              <TabsContent key={cat.slug} value={cat.slug}>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
+                  {items
+                    .filter((item) => item.category === cat.slug)
+                    .map((item) => {
+                      const isSelected = selectedItems.some(
+                        (i) => i.id === item.id
+                      );
+                      return (
+                        <Card
+                          key={item.id}
+                          onClick={() => handleItemToggle(item)}
+                          className={`cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary' : ''}`}
+                        >
+                          <CardContent className="p-2 relative">
+                            <Checkbox
+                              checked={isSelected}
+                              className="absolute top-2 right-2 z-10"
+                            />
+                            <div className="aspect-square relative w-full mb-2">
+                              {item.image && (
+                                <Image
+                                  src={item.image}
+                                  alt={item.name}
+                                  fill
+                                  className="object-cover rounded-md"
+                                />
+                              )}
+                            </div>
+                            <h3 className="font-semibold text-sm truncate">
+                              {item.name}
+                            </h3>
+                            <p className="text-xs text-muted-foreground">
+                              PKR {item.price}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  {items.filter((item) => item.category === cat.slug).length === 0 && (
+                    <div className="col-span-full text-center py-8 text-muted-foreground">
+                      No items available in this category.
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
             ))}
-          </TabsList>
-          {categories.map((cat) => (
-            <TabsContent key={cat.id} value={cat.id}>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
-                {customItems
-                  .filter((item) => item.category === cat.id)
-                  .map((item) => {
-                    const image = placeholderImages.find(
-                      (p) => p.id === item.image
-                    );
-                    const isSelected = selectedItems.some(
-                      (i) => i.id === item.id
-                    );
-                    return (
-                      <Card
-                        key={item.id}
-                        onClick={() => handleItemToggle(item)}
-                        className={`cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary' : ''}`}
-                      >
-                        <CardContent className="p-2 relative">
-                          <Checkbox
-                            checked={isSelected}
-                            className="absolute top-2 right-2 z-10"
-                          />
-                          <div className="aspect-square relative w-full mb-2">
-                            {image && (
-                              <Image
-                                src={image.imageUrl}
-                                alt={item.name}
-                                fill
-                                className="object-cover rounded-md"
-                              />
-                            )}
-                          </div>
-                          <h3 className="font-semibold text-sm truncate">
-                            {item.name}
-                          </h3>
-                          <p className="text-xs text-muted-foreground">
-                            PKR {item.price}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+          </Tabs>
+        )}
       </div>
 
       {/* Summary & Checkout */}
