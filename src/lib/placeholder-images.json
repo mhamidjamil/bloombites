@@ -1,3 +1,94 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-bouquet",
+      "description": "A large, beautifully arranged snack bouquet with a variety of treats.",
+      "imageUrl": "https://images.unsplash.com/photo-1756105317908-d8d110101915?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxzbmFjayUyMGJvdXF1ZXR8ZW58MHx8fHwxNzY1Mjc3Mjc0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "snack bouquet"
+    },
+    {
+      "id": "custom-builder-promo",
+      "description": "A person happily arranging snacks for a custom bouquet.",
+      "imageUrl": "https://images.unsplash.com/photo-1699651946221-b71a05c8c5b6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxhcnJhbmdpbmclMjBnaWZ0c3xlbnwwfHx8fDE3NjUyNzcyNzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "arranging gifts"
+    },
+    {
+      "id": "chocolate-delight-1",
+      "description": "The Chocolate Delight bouquet, featuring a rich assortment of chocolates.",
+      "imageUrl": "https://images.unsplash.com/photo-1603312452646-9aeb2f13f1a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxjaG9jb2xhdGUlMjBnaWZ0fGVufDB8fHx8MTc2NTIwOTkxOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "chocolate gift"
+    },
+    {
+      "id": "chocolate-delight-2",
+      "description": "A close-up of the Chocolate Delight bouquet.",
+      "imageUrl": "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjaG9jb2xhdGUlMjBib3h8ZW58MHx8fHwxNzY1Mjc3MjczfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "chocolate box"
+    },
+    {
+      "id": "savory-surprise-1",
+      "description": "The Savory Surprise bouquet, packed with various chips and snacks.",
+      "imageUrl": "https://images.unsplash.com/photo-1733306829390-ed75b304d1c8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxzbmFjayUyMGJhc2tldHxlbnwwfHx8fDE3NjUyNzcyNzR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "snack basket"
+    },
+    {
+      "id": "sweet-salty-1",
+      "description": "The Sweet & Salty mix bouquet, a perfect balance of flavors.",
+      "imageUrl": "https://images.unsplash.com/photo-1615189861468-e096850d655d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjYW5keSUyMGdpZnR8ZW58MHx8fHwxNzY1Mjc3MjczfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "candy gift"
+    },
+    {
+      "id": "premium-celebration-1",
+      "description": "The Premium Celebration bouquet for special occasions.",
+      "imageUrl": "https://images.unsplash.com/photo-1758995115437-7547c7e6500d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxsdXh1cnklMjBnaWZ0fGVufDB8fHx8MTc2NTIxNjU5NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "luxury gift"
+    },
+    {
+      "id": "snickers-item",
+      "description": "Snickers chocolate bar.",
+      "imageUrl": "https://images.unsplash.com/photo-1618320362989-d8a9eb2a1e52?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxjaG9jb2xhdGUlMjBiYXJ8ZW58MHx8fHwxNzY1MjUwOTI0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "chocolate bar"
+    },
+    {
+      "id": "kitkat-item",
+      "description": "KitKat chocolate bar.",
+      "imageUrl": "https://images.unsplash.com/photo-1575377427642-087cf684f29d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjaG9jb2xhdGUlMjBiYXJ8ZW58MHx8fHwxNzY1MjUwOTI0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "chocolate bar"
+    },
+    {
+      "id": "lays-item",
+      "description": "Lays chips packet.",
+      "imageUrl": "https://images.unsplash.com/photo-1585557444334-1fb2db12d234?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjaGlwcyUyMHBhY2tldHxlbnwwfHx8fDE3NjUyNzcyNzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "chips packet"
+    },
+    {
+      "id": "doritos-item",
+      "description": "Doritos chips packet.",
+      "imageUrl": "https://images.unsplash.com/photo-1748765968997-ba9bae9cfd7b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjaGlwcyUyMHBhY2tldHxlbnwwfHx8fDE3NjUyNzcyNzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "chips packet"
+    },
+    {
+      "id": "almonds-item",
+      "description": "A small bag of almonds.",
+      "imageUrl": "https://images.unsplash.com/photo-1563635707628-9d39fd827e84?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxhbG1vbmRzJTIwYmFnfGVufDB8fHx8MTc2NTI3NzI3M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "almonds bag"
+    },
+    {
+      "id": "birthday-card-item",
+      "description": "A birthday card.",
+      "imageUrl": "https://images.unsplash.com/photo-1610021685429-afed26f1cd7e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxiaXJ0aGRheSUyMGNhcmR8ZW58MHx8fHwxNzY1Mjc3MjczfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "birthday card"
+    },
+    {
+      "id": "teddy-bear-item",
+      "description": "A small teddy bear.",
+      "imageUrl": "https://images.unsplash.com/photo-1561358560-7dc4838290c1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHx0ZWRkeSUyMGJlYXJ8ZW58MHx8fHwxNzY1Mjc3MjczfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "teddy bear"
+    },
+    {
+      "id": "led-lights-item",
+      "description": "Fairy LED lights.",
+      "imageUrl": "https://images.unsplash.com/photo-1513625047154-f390b1b0df20?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmYWlyeSUyMGxpZ2h0c3xlbnwwfHx8fDE3NjUxNzU5MjF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fairy lights"
+    }
+  ]
 }

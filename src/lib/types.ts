@@ -1,0 +1,72 @@
+export type User = {
+  id: string;
+  email: string;
+  role: 'customer' | 'admin';
+  name?: string;
+  addresses?: Address[];
+};
+
+export type Address = {
+  street: string;
+  city: string;
+  province: string;
+  postalCode: string;
+};
+
+export type Bouquet = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  price: number;
+  images: string[]; // URLs to images
+  items: string[];
+  category: 'chocolates' | 'chips' | 'mixed' | 'premium';
+  isFeatured?: boolean;
+  isEnabled: boolean;
+};
+
+// Item for custom bouquet builder
+export type CustomItem = {
+  id: string;
+  name: string;
+  category: 'chocolates' | 'snacks' | 'dry-fruits' | 'notes-cards' | 'premium-add-ons';
+  price: number;
+  image: string; // URL to image
+};
+
+export type CartItem = {
+  id: string; // Unique ID for the cart item instance
+  product: Bouquet | CustomBouquet;
+  quantity: number;
+};
+
+export type CustomBouquet = {
+  id: 'custom-bouquet';
+  name: string;
+  description: string;
+  price: number;
+  items: CustomItem[];
+  instructions?: string;
+};
+
+export type Order = {
+  id: string;
+  userId: string;
+  items: CartItem[];
+  totalAmount: number;
+  shippingAddress: Address;
+  customerDetails: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  status: 'processing' | 'completed' | 'cancelled';
+  orderDate: Date;
+};
+
+export type Testimonial = {
+  id: number;
+  quote: string;
+  author: string;
+};
