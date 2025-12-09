@@ -1,62 +1,85 @@
 'use client';
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import type { User } from './types';
-import { useRouter } from 'next/navigation';
-
-// Mock user data
-const mockAdmin: User = { id: 'admin-123', email: 'admin@bloombites.com', role: 'admin', name: 'Admin User' };
-const mockCustomer: User = { id: 'cust-456', email: 'customer@example.com', role: 'customer', name: 'John Doe' };
+import React, { createContext, useContext, useEffect } from 'react';
+import { useUser, User } from '@/firebase/auth/use-user';
+import { useRouter, usePathname } from 'next/navigation';
+import {
+  getAuth,
+  signOut,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from 'firebase/auth';
+import { doc, setDoc, getFirestore } from 'firebase/firestore';
+import { errorEmitter }from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (role: 'admin' | 'customer') => void;
-  logout: () => void;
+  login: typeof signInWithEmailAndPassword;
+  logout: typeof signOut;
+  signup: typeof createUserWithEmailAndPassword;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const { user, isLoading } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
+  const auth = getAuth();
+  const firestore = getFirestore();
 
-  useEffect(() => {
-    // Simulate checking for a logged-in user in localStorage
-    try {
-      const storedUser = localStorage.getItem('bloombites-user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-    } catch (error) {
-      console.error("Failed to parse user from localStorage", error);
-      localStorage.removeItem('bloombites-user');
-    }
-    setLoading(false);
-  }, []);
+  const login = (email: string, password: string) => {
+    return signInWithEmailAndPassword(auth, email, password);
+  };
 
-  const login = (role: 'admin' | 'customer') => {
-    setLoading(true);
-    const userToLogin = role === 'admin' ? mockAdmin : mockCustomer;
-    setUser(userToLogin);
-    localStorage.setItem('bloombites-user', JSON.stringify(userToLogin));
-    setLoading(false);
-    router.push(role === 'admin' ? '/admin' : '/');
+  const signup = async (email: string, password: string) => {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+    const user = userCredential.user;
+
+    const userProfile = {
+      uid: user.uid,
+      email: user.email,
+      role: 'customer',
+      name: user.displayName || '',
+    };
+    
+    const userDocRef = doc(firestore, 'users', user.uid);
+
+    setDoc(userDocRef, userProfile, { merge: true }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'create',
+          requestResourceData: userProfile,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
+
+
+    return userCredential;
   };
 
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem('bloombites-user');
-    router.push('/login');
+    return signOut(auth);
   };
 
-  const value = { user, loading, login, logout };
+  useEffect(() => {
+    if (!isLoading && !user && (pathname.startsWith('/admin') || pathname === '/checkout')) {
+      router.push('/login');
+    }
+  }, [user, isLoading, pathname, router]);
+
+  const value = { user, loading: isLoading, login, logout, signup };
 
   return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
   );
 };
 
