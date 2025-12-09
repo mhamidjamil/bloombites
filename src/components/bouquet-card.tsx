@@ -40,7 +40,7 @@ const BouquetCard = ({ bouquet }: BouquetCardProps) => {
         </CardDescription>
       </CardContent>
       <CardFooter className="p-4 flex justify-between items-center">
-        <span className="text-2xl font-bold font-headline text-accent-foreground">PKR {bouquet.price.toLocaleString()}</span>
+        <span className="text-2xl font-bold font-headline text-accent">PKR {bouquet.price.toLocaleString()}</span>
         <div className="flex gap-2">
           <Button asChild variant="outline" size="icon">
             <Link href={`/shop/${bouquet.slug}`}><Eye className="h-4 w-4" /><span className="sr-only">View Details</span></Link>
