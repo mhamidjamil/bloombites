@@ -12,6 +12,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { useState, useEffect } from 'react';
+import { ThemeToggle } from './theme-toggle';
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -42,6 +43,7 @@ const Header = () => {
         </nav>
 
         <div className="flex items-center gap-2 md:gap-4">
+          <ThemeToggle />
           <Button asChild variant="ghost" size="icon">
             <Link href="/cart">
               <ShoppingCart className="h-5 w-5" />
