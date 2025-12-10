@@ -1,15 +1,15 @@
 import { initializeFirebase } from '@/firebase';
-import { 
-  collection, 
-  doc, 
-  getDoc, 
-  setDoc, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
+import {
+  collection,
+  doc,
+  getDoc,
+  setDoc,
+  getDocs,
+  addDoc,
+  updateDoc,
   deleteDoc,
   query,
-  orderBy
+  orderBy,
 } from 'firebase/firestore';
 
 const { firestore } = initializeFirebase();
@@ -60,7 +60,9 @@ import { Bouquet, CustomItem, Category } from './types';
 export const getSiteImages = async (): Promise<SiteImage[]> => {
   const colRef = collection(firestore, 'site_images');
   const snapshot = await getDocs(colRef);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SiteImage));
+  return snapshot.docs.map(
+    (doc) => ({ id: doc.id, ...doc.data() }) as SiteImage
+  );
 };
 
 export const addSiteImage = async (image: Omit<SiteImage, 'id'>) => {
@@ -77,7 +79,9 @@ export const deleteSiteImage = async (id: string) => {
 export const getCategories = async (): Promise<Category[]> => {
   const colRef = collection(firestore, 'categories');
   const snapshot = await getDocs(colRef);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+  return snapshot.docs.map(
+    (doc) => ({ id: doc.id, ...doc.data() }) as Category
+  );
 };
 
 export const addCategory = async (cat: Omit<Category, 'id'>) => {
@@ -94,7 +98,7 @@ export const deleteCategory = async (id: string) => {
 export const getBouquets = async (): Promise<Bouquet[]> => {
   const colRef = collection(firestore, 'products');
   const snapshot = await getDocs(colRef);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Bouquet));
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Bouquet);
 };
 
 export const addProduct = async (product: Omit<Bouquet, 'id'>) => {
@@ -118,7 +122,9 @@ export const deleteProduct = async (id: string) => {
 export const getCustomItems = async (): Promise<CustomItem[]> => {
   const colRef = collection(firestore, 'custom_items');
   const snapshot = await getDocs(colRef);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CustomItem));
+  return snapshot.docs.map(
+    (doc) => ({ id: doc.id, ...doc.data() }) as CustomItem
+  );
 };
 
 export const addCustomItem = async (item: Omit<CustomItem, 'id'>) => {
@@ -126,7 +132,10 @@ export const addCustomItem = async (item: Omit<CustomItem, 'id'>) => {
   await addDoc(colRef, item);
 };
 
-export const updateCustomItem = async (id: string, data: Partial<CustomItem>) => {
+export const updateCustomItem = async (
+  id: string,
+  data: Partial<CustomItem>
+) => {
   const docRef = doc(firestore, 'custom_items', id);
   await updateDoc(docRef, data);
 };

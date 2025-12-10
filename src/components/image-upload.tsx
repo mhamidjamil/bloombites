@@ -37,9 +37,12 @@ export default function ImageUpload({
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
-  const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  }, []);
+  const onCropComplete = useCallback(
+    (_croppedArea: Area, croppedAreaPixels: Area) => {
+      setCroppedAreaPixels(croppedAreaPixels);
+    },
+    []
+  );
 
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -55,7 +58,11 @@ export default function ImageUpload({
   const readFile = (file: File): Promise<string> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.addEventListener('load', () => resolve(reader.result as string), false);
+      reader.addEventListener(
+        'load',
+        () => resolve(reader.result as string),
+        false
+      );
       reader.readAsDataURL(file);
     });
   };
@@ -129,21 +136,21 @@ export default function ImageUpload({
     <div className={className}>
       {currentImage ? (
         <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden border bg-muted">
-           <Image 
-             src={currentImage} 
-             alt="Current image" 
-             fill 
-             className="object-cover" 
-             unoptimized 
-           />
-           <Button 
-             variant="destructive" 
-             size="icon" 
-             className="absolute top-2 right-2 h-6 w-6"
-             onClick={() => onUploadComplete('')} // Or a dedicated remove handler
-           >
-             <X className="h-4 w-4" />
-           </Button>
+          <Image
+            src={currentImage}
+            alt="Current image"
+            fill
+            className="object-cover"
+            unoptimized
+          />
+          <Button
+            variant="destructive"
+            size="icon"
+            className="absolute top-2 right-2 h-6 w-6"
+            onClick={() => onUploadComplete('')} // Or a dedicated remove handler
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
       ) : null}
 
@@ -170,7 +177,7 @@ export default function ImageUpload({
               Adjust the image crop and zoom before uploading.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="relative w-full h-[400px] bg-black rounded-md overflow-hidden">
             {imageSrc && (
               <Cropper
@@ -187,20 +194,24 @@ export default function ImageUpload({
 
           <div className="py-4">
             <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground w-12">Zoom</span>
-                <Slider
+              <span className="text-sm text-muted-foreground w-12">Zoom</span>
+              <Slider
                 value={[zoom]}
                 min={1}
                 max={3}
                 step={0.1}
                 onValueChange={(value) => setZoom(value[0])}
                 className="flex-1"
-                />
+              />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isUploading}>
+            <Button
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              disabled={isUploading}
+            >
               Cancel
             </Button>
             <Button onClick={handleUpload} disabled={isUploading}>

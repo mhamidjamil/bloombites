@@ -22,8 +22,10 @@ export async function POST(req: NextRequest) {
       ContentType: contentType,
     });
 
-    const signedUrl = await getSignedUrl(r2Client, command, { expiresIn: 3600 });
-    
+    const signedUrl = await getSignedUrl(r2Client, command, {
+      expiresIn: 3600,
+    });
+
     // Construct the public URL
     // If R2_PUBLIC_URL is provided, use it. Otherwise, we might default to a structure or leave it empty/warn.
     // Assuming R2_PUBLIC_URL does NOT have a trailing slash.

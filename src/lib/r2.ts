@@ -20,4 +20,3 @@ export const r2Client = new S3Client({
 
 export const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'bloombites';
 export const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || ''; // e.g., https://pub-xyz.r2.dev
-

@@ -22,7 +22,7 @@ import {
   Pencil,
   MoreHorizontal,
   Loader2,
-  X
+  X,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -31,20 +31,20 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import {
   DropdownMenu,
@@ -55,25 +55,24 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import ImageUpload from '@/components/image-upload'; // Keep for Images tab direct usage or replace there too? User said "all over the app". I will use ImagePicker there too.
 import ImagePicker from '@/components/image-picker';
-import { 
-  getLandingPageData, 
-  updateLandingPageData, 
-  getSiteImages, 
+import {
+  getLandingPageData,
+  updateLandingPageData,
+  getSiteImages,
   addSiteImage,
-  deleteSiteImage, 
+  deleteSiteImage,
   getBouquets,
   addProduct,
   updateProduct,
   deleteProduct,
   getCategories,
   type SiteImage,
-  type Category
 } from '@/lib/db-service';
-import type { Bouquet } from '@/lib/types';
+import type { Bouquet, Category } from '@/lib/types';
 
 export default function AdminDashboardPage() {
   // Content State
@@ -83,7 +82,7 @@ export default function AdminDashboardPage() {
   const [showPromo, setShowPromo] = useState(true);
   const [promoImageUrl, setPromoImageUrl] = useState('');
   const [isSavingContent, setIsSavingContent] = useState(false);
-  
+
   // Images State
   const [images, setImages] = useState<SiteImage[]>([]);
   const [imageSearch, setImageSearch] = useState('');
@@ -94,45 +93,46 @@ export default function AdminDashboardPage() {
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Bouquet | null>(null);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
-  
+
   // Product Form State
   const [productForm, setProductForm] = useState<Partial<Bouquet>>({
-      name: '',
-      description: '',
-      price: 0,
-      category: '',
-      images: [],
-      isFeatured: false,
-      isEnabled: true,
-      items: []
+    name: '',
+    description: '',
+    price: 0,
+    category: '',
+    images: [],
+    isFeatured: false,
+    isEnabled: true,
+    items: [],
   });
 
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const { toast } = useToast();
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [content, fetchedImages, fetchedProducts, fetchedCategories] = await Promise.all([
+      const [content, fetchedImages, fetchedProducts, fetchedCategories] =
+        await Promise.all([
           getLandingPageData(),
           getSiteImages(),
           getBouquets(),
-          getCategories()
-      ]);
+          getCategories(),
+        ]);
 
       // Load Content
       if (content) {
         setHeroTitle(content.hero?.title || '');
         setHeroSubtitle(content.hero?.subtitle || '');
-        
+
         // Handle migration from single URL to Array
         if (content.hero?.imageUrls && content.hero.imageUrls.length > 0) {
-            setHeroImageUrls(content.hero.imageUrls);
+          setHeroImageUrls(content.hero.imageUrls);
         } else if (content.hero?.imageUrl) {
-            setHeroImageUrls([content.hero.imageUrl]);
+          setHeroImageUrls([content.hero.imageUrl]);
         }
-        
+
         setShowPromo(content.featured?.showPromo ?? true);
         setPromoImageUrl(content.featured?.promoImageUrl || '');
       }
@@ -140,171 +140,200 @@ export default function AdminDashboardPage() {
       setImages(fetchedImages);
       setProducts(fetchedProducts);
       setCategories(fetchedCategories);
-
     } catch (error) {
-        console.error("Failed to load admin data", error);
-        toast({
-            variant: "destructive",
-            title: "Error loading data",
-            description: "Could not fetch dashboard data."
-        });
+      console.error('Failed to load admin data', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error loading data',
+        description: 'Could not fetch dashboard data.',
+      });
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   // --- Content Handlers ---
   const handleSaveContent = async () => {
     setIsSavingContent(true);
     try {
-        await updateLandingPageData({
-            hero: { 
-                title: heroTitle, 
-                subtitle: heroSubtitle, 
-                imageUrl: heroImageUrls[0] || '', // Backward compat
-                imageUrls: heroImageUrls 
-            },
-            featured: { showPromo, promoImageUrl }
-        });
-        toast({
-            title: 'Dashboard Updated',
-            description: 'Content changes have been saved successfully.',
-        });
+      await updateLandingPageData({
+        hero: {
+          title: heroTitle,
+          subtitle: heroSubtitle,
+          imageUrl: heroImageUrls[0] || '', // Backward compat
+          imageUrls: heroImageUrls,
+        },
+        featured: { showPromo, promoImageUrl },
+      });
+      toast({
+        title: 'Dashboard Updated',
+        description: 'Content changes have been saved successfully.',
+      });
     } catch (error) {
-        toast({
-            variant: "destructive",
-            title: "Save Failed",
-            description: "Could not update content."
-        });
+      toast({
+        variant: 'destructive',
+        title: 'Save Failed',
+        description: 'Could not update content.',
+      });
     } finally {
-        setIsSavingContent(false);
+      setIsSavingContent(false);
     }
   };
 
   const addHeroImage = (url: string) => {
-      setHeroImageUrls(prev => [...prev, url]);
-      toast({ title: 'Image Added', description: 'Hero image added.' });
+    setHeroImageUrls((prev) => [...prev, url]);
+    toast({ title: 'Image Added', description: 'Hero image added.' });
   };
 
   const removeHeroImage = (index: number) => {
-      setHeroImageUrls(prev => prev.filter((_, i) => i !== index));
+    setHeroImageUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   // --- Image Handlers ---
   const handleImageUploaded = async (url: string) => {
-      // ImagePicker handles saving to library for uploads. 
-      // But if user uses URL tab in Images tab, we might want to explicitly save it? 
-      // ImagePicker's URL tab doesn't auto-save to library currently. 
-      // Let's force save here if it's new.
-      // Actually, for the "Images" tab, reusing ImagePicker is tricky if I want "Paste URL" to also create a library entry.
-      // I'll assume if they use "Paste URL" here, they want to add it to library.
-      try {
-        const exists = images.find(i => i.url === url);
-        if (!exists) {
-            const newImage = {
-                url,
-                name: 'Added Image',
-                description: 'Start managing this image',
-                uploadedAt: Date.now()
-            };
-            await addSiteImage(newImage);
-            const fresh = await getSiteImages();
-            setImages(fresh);
-             toast({
-                title: 'Image Saved',
-                description: 'Image added to library.',
-            });
-        }
-      } catch (e) {
-          console.error(e);
+    // ImagePicker handles saving to library for uploads.
+    // But if user uses URL tab in Images tab, we might want to explicitly save it?
+    // ImagePicker's URL tab doesn't auto-save to library currently.
+    // Let's force save here if it's new.
+    // Actually, for the "Images" tab, reusing ImagePicker is tricky if I want "Paste URL" to also create a library entry.
+    // I'll assume if they use "Paste URL" here, they want to add it to library.
+    try {
+      const exists = images.find((i) => i.url === url);
+      if (!exists) {
+        const newImage = {
+          url,
+          name: 'Added Image',
+          description: 'Start managing this image',
+          uploadedAt: Date.now(),
+        };
+        await addSiteImage(newImage);
+        const fresh = await getSiteImages();
+        setImages(fresh);
+        toast({
+          title: 'Image Saved',
+          description: 'Image added to library.',
+        });
       }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleDeleteImage = async (id: string) => {
-      try {
-          await deleteSiteImage(id);
-          setImages(images.filter(img => img.id !== id));
-          toast({ title: "Image Deleted", description: "Image removed from library." });
-      } catch (error) {
-          toast({ variant: "destructive", title: "Error", description: "Failed to delete image." });
-      }
+    try {
+      await deleteSiteImage(id);
+      setImages(images.filter((img) => img.id !== id));
+      toast({
+        title: 'Image Deleted',
+        description: 'Image removed from library.',
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete image.',
+      });
+    }
   };
 
   const copyToClipboard = (text: string) => {
-      navigator.clipboard.writeText(text);
-      toast({ title: "Copied!", description: "Image URL copied to clipboard." });
+    navigator.clipboard.writeText(text);
+    toast({ title: 'Copied!', description: 'Image URL copied to clipboard.' });
   };
 
   // --- Product Handlers ---
   const openNewProductDialog = () => {
-      setEditingProduct(null);
-      setProductForm({
-        name: '',
-        description: '',
-        price: 0,
-        category: categories.find(c => c.type === 'product')?.slug || '',
-        images: [''],
-        isFeatured: false,
-        isEnabled: true,
-        items: []
-      });
-      setIsProductDialogOpen(true);
+    setEditingProduct(null);
+    setProductForm({
+      name: '',
+      description: '',
+      price: 0,
+      category: categories.find((c) => c.type === 'product')?.slug || '',
+      images: [''],
+      isFeatured: false,
+      isEnabled: true,
+      items: [],
+    });
+    setIsProductDialogOpen(true);
   };
 
   const openEditProductDialog = (product: Bouquet) => {
-      setEditingProduct(product);
-      setProductForm({ ...product });
-      setIsProductDialogOpen(true);
+    setEditingProduct(product);
+    setProductForm({ ...product });
+    setIsProductDialogOpen(true);
   };
 
   const handleSaveProduct = async () => {
-      if (!productForm.name || !productForm.price) {
-          toast({ variant: 'destructive', title: 'Validation Error', description: 'Name and Price are required.' });
-          return;
+    if (!productForm.name || !productForm.price) {
+      toast({
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: 'Name and Price are required.',
+      });
+      return;
+    }
+    setIsSavingProduct(true);
+
+    try {
+      const slug = productForm.name
+        .toLowerCase()
+        .replace(/ /g, '-')
+        .replace(/[^\w-]+/g, '');
+      const dataToSave: any = {
+        ...productForm,
+        slug,
+        items: productForm.items || [],
+      };
+
+      if (editingProduct && editingProduct.id) {
+        await updateProduct(editingProduct.id, dataToSave);
+        toast({
+          title: 'Product Updated',
+          description: `${productForm.name} saved.`,
+        });
+      } else {
+        await addProduct(dataToSave);
+        toast({
+          title: 'Product Created',
+          description: `${productForm.name} created.`,
+        });
       }
-      setIsSavingProduct(true);
 
-      try {
-        const slug = productForm.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
-        const dataToSave: any = {
-            ...productForm,
-            slug,
-            items: productForm.items || [],
-        };
-
-        if (editingProduct && editingProduct.id) {
-            await updateProduct(editingProduct.id, dataToSave);
-            toast({ title: 'Product Updated', description: `${productForm.name} saved.` });
-        } else {
-            await addProduct(dataToSave);
-            toast({ title: 'Product Created', description: `${productForm.name} created.` });
-        }
-
-        // Refresh
-        const fetchedProducts = await getBouquets();
-        setProducts(fetchedProducts);
-        setIsProductDialogOpen(false);
-
-      } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to save product.' });
-      } finally {
-        setIsSavingProduct(false);
-      }
+      // Refresh
+      const fetchedProducts = await getBouquets();
+      setProducts(fetchedProducts);
+      setIsProductDialogOpen(false);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to save product.',
+      });
+    } finally {
+      setIsSavingProduct(false);
+    }
   };
 
   const handleDeleteProduct = async (id: string) => {
-      if(!confirm("Are you sure you want to delete this product?")) return;
-      try {
-          await deleteProduct(id);
-          setProducts(products.filter(p => p.id !== id));
-          toast({ title: "Product Deleted", description: "Product has been removed." });
-      } catch (error) {
-          toast({ variant: "destructive", title: "Error", description: "Failed to delete product." });
-      }
+    if (!confirm('Are you sure you want to delete this product?')) return;
+    try {
+      await deleteProduct(id);
+      setProducts(products.filter((p) => p.id !== id));
+      toast({
+        title: 'Product Deleted',
+        description: 'Product has been removed.',
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete product.',
+      });
+    }
   };
 
   const filteredImages = images.filter(
@@ -313,7 +342,7 @@ export default function AdminDashboardPage() {
       img.description?.toLowerCase().includes(imageSearch.toLowerCase())
   );
 
-  const productCategories = categories.filter(c => c.type === 'product');
+  const productCategories = categories.filter((c) => c.type === 'product');
 
   const stats = [
     {
@@ -334,12 +363,12 @@ export default function AdminDashboardPage() {
   ];
 
   if (isLoading) {
-      return (
-          <div className="flex items-center justify-center min-h-[60vh]">
-              <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
-              <span>Loading dashboard...</span>
-          </div>
-      );
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+        <span>Loading dashboard...</span>
+      </div>
+    );
   }
 
   return (
@@ -374,7 +403,7 @@ export default function AdminDashboardPage() {
               </Card>
             ))}
           </div>
-           <Card>
+          <Card>
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
               <CardDescription>
@@ -418,42 +447,57 @@ export default function AdminDashboardPage() {
             <CardContent className="space-y-8">
               <div className="grid gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="hero-title">Hero Title</Label>
-                    <Input
+                  <Label htmlFor="hero-title">Hero Title</Label>
+                  <Input
                     id="hero-title"
                     value={heroTitle}
                     onChange={(e) => setHeroTitle(e.target.value)}
-                    />
+                  />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="hero-subtitle">Hero Subtitle</Label>
-                    <Input
+                  <Label htmlFor="hero-subtitle">Hero Subtitle</Label>
+                  <Input
                     id="hero-subtitle"
                     value={heroSubtitle}
                     onChange={(e) => setHeroSubtitle(e.target.value)}
-                    />
+                  />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label>Hero Images</Label>
-                <CardDescription className="mb-2">Upload or paste links for hero slideshow.</CardDescription>
-                
+                <CardDescription className="mb-2">
+                  Upload or paste links for hero slideshow.
+                </CardDescription>
+
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {heroImageUrls.map((url, idx) => (
-                        <div key={idx} className="relative aspect-video bg-muted rounded-md overflow-hidden group border">
-                            <img src={url} className="object-cover w-full h-full" alt="Hero" />
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                 <Button variant="destructive" size="icon" onClick={() => removeHeroImage(idx)}>
-                                    <Trash2 className="h-4 w-4"/>
-                                 </Button>
-                            </div>
-                        </div>
-                    ))}
-                    <div className="p-2 border border-dashed rounded-md bg-muted/20 hover:bg-muted/40 transition-colors">
-                         <div className="text-xs text-center mb-2 font-medium">Add Image</div>
-                         <ImagePicker onImageSelected={addHeroImage} />
+                  {heroImageUrls.map((url, idx) => (
+                    <div
+                      key={idx}
+                      className="relative aspect-video bg-muted rounded-md overflow-hidden group border"
+                    >
+                      <img
+                        src={url}
+                        className="object-cover w-full h-full"
+                        alt="Hero"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => removeHeroImage(idx)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
+                  ))}
+                  <div className="p-2 border border-dashed rounded-md bg-muted/20 hover:bg-muted/40 transition-colors">
+                    <div className="text-xs text-center mb-2 font-medium">
+                      Add Image
+                    </div>
+                    <ImagePicker onImageSelected={addHeroImage} />
+                  </div>
                 </div>
               </div>
 
@@ -462,43 +506,49 @@ export default function AdminDashboardPage() {
                   Featured Settings
                 </h3>
                 <div className="grid gap-6">
-                    <div className="flex items-center space-x-2">
-                        <Switch 
-                            id="show-promo" 
-                            checked={showPromo} 
-                            onCheckedChange={setShowPromo} 
-                        />
-                        <Label htmlFor="show-promo">
-                            Show "Build Custom Bouquet" Promo Section
-                        </Label>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Promo Image</Label>
-                        <div className="flex gap-4 items-start flex-col md:flex-row">
-                            {promoImageUrl && (
-                                <div className="relative w-full md:w-48 aspect-video rounded-md overflow-hidden border shrink-0">
-                                    <img src={promoImageUrl} className="object-cover w-full h-full" alt="Promo" />
-                                     <Button 
-                                        variant="destructive" 
-                                        size="icon" 
-                                        className="absolute top-1 right-1 h-6 w-6" 
-                                        onClick={() => setPromoImageUrl('')}
-                                     >
-                                        <X className="h-3 w-3" />
-                                     </Button>
-                                </div>
-                            )}
-                            <div className="flex-1 w-full">
-                                <ImagePicker onImageSelected={setPromoImageUrl} />
-                            </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="show-promo"
+                      checked={showPromo}
+                      onCheckedChange={setShowPromo}
+                    />
+                    <Label htmlFor="show-promo">
+                      Show "Build Custom Bouquet" Promo Section
+                    </Label>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Promo Image</Label>
+                    <div className="flex gap-4 items-start flex-col md:flex-row">
+                      {promoImageUrl && (
+                        <div className="relative w-full md:w-48 aspect-video rounded-md overflow-hidden border shrink-0">
+                          <img
+                            src={promoImageUrl}
+                            className="object-cover w-full h-full"
+                            alt="Promo"
+                          />
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-1 right-1 h-6 w-6"
+                            onClick={() => setPromoImageUrl('')}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
                         </div>
+                      )}
+                      <div className="flex-1 w-full">
+                        <ImagePicker onImageSelected={setPromoImageUrl} />
+                      </div>
                     </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
             <CardFooter>
               <Button onClick={handleSaveContent} disabled={isSavingContent}>
-                {isSavingContent && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSavingContent && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 Save Changes
               </Button>
             </CardFooter>
@@ -511,113 +561,198 @@ export default function AdminDashboardPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Products Management</CardTitle>
-                <CardDescription>
-                  Manage bouquets and products.
-                </CardDescription>
+                <CardDescription>Manage bouquets and products.</CardDescription>
               </div>
               <Button onClick={openNewProductDialog}>
                 <Plus className="mr-2 h-4 w-4" /> Add Product
               </Button>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {products.length === 0 && <div className="col-span-3 text-center py-10">No products found. Add one!</div>}
-                    {products.map(product => (
-                        <Card key={product.id} className="relative">
-                            <CardHeader className="pb-2">
-                                <div className="absolute top-4 right-4">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => openEditProductDialog(product)}>Edit</DropdownMenuItem>
-                                            <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteProduct(product.id)}>Delete</DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                                <CardTitle className="text-lg">{product.name}</CardTitle>
-                                <CardDescription className="line-clamp-1">{product.description}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="pb-2">
-                                <div className="w-full h-32 bg-muted rounded-md mb-2 overflow-hidden">
-                                    <img src={product.images[0] || '/placeholder.jpg'} alt={product.name} className="w-full h-full object-cover" />
-                                </div>
-                                <p className="font-bold">PKR {product.price}</p>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.length === 0 && (
+                  <div className="col-span-3 text-center py-10">
+                    No products found. Add one!
+                  </div>
+                )}
+                {products.map((product) => (
+                  <Card key={product.id} className="relative">
+                    <CardHeader className="pb-2">
+                      <div className="absolute top-4 right-4">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => openEditProductDialog(product)}
+                            >
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => handleDeleteProduct(product.id)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <CardTitle className="text-lg">{product.name}</CardTitle>
+                      <CardDescription className="line-clamp-1">
+                        {product.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pb-2">
+                      <div className="w-full h-32 bg-muted rounded-md mb-2 overflow-hidden">
+                        <img
+                          src={product.images[0] || '/placeholder.jpg'}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <p className="font-bold">PKR {product.price}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </CardContent>
           </Card>
 
-           {/* Product Edit Dialog */}
-           <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
-                        <DialogDescription>Fill in the details for the bouquet.</DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="p-name">Name</Label>
-                                <Input id="p-name" value={productForm.name} onChange={(e) => setProductForm({...productForm, name: e.target.value})} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="p-price">Price (PKR)</Label>
-                                <Input id="p-price" type="number" value={productForm.price} onChange={(e) => setProductForm({...productForm, price: Number(e.target.value)})} />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="p-desc">Description</Label>
-                            <Textarea id="p-desc" value={productForm.description} onChange={(e) => setProductForm({...productForm, description: e.target.value})} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="p-cat">Category</Label>
-                            <Select value={productForm.category} onValueChange={(val: any) => setProductForm({...productForm, category: val})}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select Category" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {productCategories.length === 0 && <SelectItem value="mixed">Mixed (Default)</SelectItem>}
-                                    {productCategories.map(cat => (
-                                        <SelectItem key={cat.id} value={cat.slug}>{cat.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                             <Label>Product Image</Label>
-                             <div className="flex items-start gap-4 p-4 border rounded-md">
-                                 {productForm.images && productForm.images[0] ? (
-                                     <div className="relative w-24 h-24 rounded overflow-hidden shrink-0">
-                                         <img src={productForm.images[0]} className="w-full h-full object-cover" alt="Product" />
-                                         <Button variant="ghost" size="icon" className="absolute top-0 right-0 h-5 w-5 bg-white/50 hover:bg-white" onClick={() => setProductForm({...productForm, images: []})}>
-                                            <X className="h-3 w-3"/>
-                                         </Button>
-                                     </div>
-                                 ) : (
-                                     <div className="text-sm text-muted-foreground self-center">No image</div>
-                                 )}
-                                 <div className="flex-1 min-w-0">
-                                    <ImagePicker onImageSelected={(url) => setProductForm({...productForm, images: [url]})} />
-                                 </div>
-                             </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                             <Switch id="p-featured" checked={productForm.isFeatured} onCheckedChange={(checked) => setProductForm({...productForm, isFeatured: checked})} />
-                             <Label htmlFor="p-featured">Featured Product</Label>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button onClick={handleSaveProduct} disabled={isSavingProduct}>
-                            {isSavingProduct && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Product
+          {/* Product Edit Dialog */}
+          <Dialog
+            open={isProductDialogOpen}
+            onOpenChange={setIsProductDialogOpen}
+          >
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingProduct ? 'Edit Product' : 'Add New Product'}
+                </DialogTitle>
+                <DialogDescription>
+                  Fill in the details for the bouquet.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="p-name">Name</Label>
+                    <Input
+                      id="p-name"
+                      value={productForm.name}
+                      onChange={(e) =>
+                        setProductForm({ ...productForm, name: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="p-price">Price (PKR)</Label>
+                    <Input
+                      id="p-price"
+                      type="number"
+                      value={productForm.price}
+                      onChange={(e) =>
+                        setProductForm({
+                          ...productForm,
+                          price: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="p-desc">Description</Label>
+                  <Textarea
+                    id="p-desc"
+                    value={productForm.description}
+                    onChange={(e) =>
+                      setProductForm({
+                        ...productForm,
+                        description: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="p-cat">Category</Label>
+                  <Select
+                    value={productForm.category}
+                    onValueChange={(val: any) =>
+                      setProductForm({ ...productForm, category: val })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {productCategories.length === 0 && (
+                        <SelectItem value="mixed">Mixed (Default)</SelectItem>
+                      )}
+                      {productCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.slug}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Product Image</Label>
+                  <div className="flex items-start gap-4 p-4 border rounded-md">
+                    {productForm.images && productForm.images[0] ? (
+                      <div className="relative w-24 h-24 rounded overflow-hidden shrink-0">
+                        <img
+                          src={productForm.images[0]}
+                          className="w-full h-full object-cover"
+                          alt="Product"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-0 right-0 h-5 w-5 bg-white/50 hover:bg-white"
+                          onClick={() =>
+                            setProductForm({ ...productForm, images: [] })
+                          }
+                        >
+                          <X className="h-3 w-3" />
                         </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground self-center">
+                        No image
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <ImagePicker
+                        onImageSelected={(url) =>
+                          setProductForm({ ...productForm, images: [url] })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="p-featured"
+                    checked={productForm.isFeatured}
+                    onCheckedChange={(checked) =>
+                      setProductForm({ ...productForm, isFeatured: checked })
+                    }
+                  />
+                  <Label htmlFor="p-featured">Featured Product</Label>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={handleSaveProduct} disabled={isSavingProduct}>
+                  {isSavingProduct && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Save Product
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* IMAGES TAB */}
@@ -631,12 +766,12 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-end gap-4">
-                 <div className="flex-1 space-y-2">
-                    <Label>Add New Image</Label>
-                    <ImagePicker onImageSelected={handleImageUploaded} />
-                 </div>
+                <div className="flex-1 space-y-2">
+                  <Label>Add New Image</Label>
+                  <ImagePicker onImageSelected={handleImageUploaded} />
+                </div>
               </div>
-              
+
               <div className="flex items-center space-x-2 pt-4">
                 <Input
                   placeholder="Search images..."
@@ -648,9 +783,9 @@ export default function AdminDashboardPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[600px] overflow-y-auto pr-2">
                 {filteredImages.length === 0 && (
-                    <div className="col-span-2 text-center text-muted-foreground py-8">
-                        No images found.
-                    </div>
+                  <div className="col-span-2 text-center text-muted-foreground py-8">
+                    No images found.
+                  </div>
                 )}
                 {filteredImages.map((img) => (
                   <div
@@ -672,12 +807,22 @@ export default function AdminDashboardPage() {
                         </p>
                       </div>
                       <div className="flex gap-2">
-                         <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => copyToClipboard(img.url)}>
-                            <Copy className="h-3 w-3 mr-1" /> Copy URL
-                         </Button>
-                         <Button size="sm" variant="destructive" className="h-8 px-2" onClick={() => img.id && handleDeleteImage(img.id)}>
-                            <Trash2 className="h-3 w-3" />
-                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-2"
+                          onClick={() => copyToClipboard(img.url)}
+                        >
+                          <Copy className="h-3 w-3 mr-1" /> Copy URL
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="h-8 px-2"
+                          onClick={() => img.id && handleDeleteImage(img.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -690,4 +835,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
