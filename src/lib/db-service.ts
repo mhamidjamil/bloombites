@@ -19,6 +19,7 @@ export interface HeroContent {
   title: string;
   subtitle: string;
   imageUrl?: string;
+  imageUrls?: string[];
 }
 
 export interface FeaturedSettings {

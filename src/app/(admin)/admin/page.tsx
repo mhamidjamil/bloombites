@@ -20,7 +20,9 @@ import {
   Copy,
   Plus,
   Pencil,
-  MoreHorizontal
+  MoreHorizontal,
+  Loader2,
+  X
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -74,9 +76,10 @@ export default function AdminDashboardPage() {
   // Content State
   const [heroTitle, setHeroTitle] = useState('');
   const [heroSubtitle, setHeroSubtitle] = useState('');
-  const [heroImageUrl, setHeroImageUrl] = useState('');
+  const [heroImageUrls, setHeroImageUrls] = useState<string[]>([]);
   const [showPromo, setShowPromo] = useState(true);
   const [promoImageUrl, setPromoImageUrl] = useState('');
+  const [isSavingContent, setIsSavingContent] = useState(false);
   
   // Images State
   const [images, setImages] = useState<SiteImage[]>([]);
@@ -86,6 +89,8 @@ export default function AdminDashboardPage() {
   const [products, setProducts] = useState<Bouquet[]>([]);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Bouquet | null>(null);
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
+  
   // Product Form State
   const [productForm, setProductForm] = useState<Partial<Bouquet>>({
       name: '',
@@ -110,7 +115,14 @@ export default function AdminDashboardPage() {
       if (content) {
         setHeroTitle(content.hero?.title || '');
         setHeroSubtitle(content.hero?.subtitle || '');
-        setHeroImageUrl(content.hero?.imageUrl || '');
+        
+        // Handle migration from single URL to Array
+        if (content.hero?.imageUrls && content.hero.imageUrls.length > 0) {
+            setHeroImageUrls(content.hero.imageUrls);
+        } else if (content.hero?.imageUrl) {
+            setHeroImageUrls([content.hero.imageUrl]);
+        }
+        
         setShowPromo(content.featured?.showPromo ?? true);
         setPromoImageUrl(content.featured?.promoImageUrl || '');
       }
@@ -139,11 +151,34 @@ export default function AdminDashboardPage() {
     loadData();
   }, []);
 
+  // --- Helper: Save uploaded image to library silently ---
+  const saveToLibrary = async (url: string) => {
+    try {
+         const newImage = {
+            url,
+            name: 'Direct Upload',
+            description: 'Uploaded via Content/Product Editor',
+            uploadedAt: Date.now()
+        };
+        await addSiteImage(newImage);
+        // Refresh library in background
+        getSiteImages().then(setImages);
+    } catch(e) {
+        console.error("Failed to save to library history", e);
+    }
+  };
+
   // --- Content Handlers ---
   const handleSaveContent = async () => {
+    setIsSavingContent(true);
     try {
         await updateLandingPageData({
-            hero: { title: heroTitle, subtitle: heroSubtitle, imageUrl: heroImageUrl },
+            hero: { 
+                title: heroTitle, 
+                subtitle: heroSubtitle, 
+                imageUrl: heroImageUrls[0] || '', // Backward compat
+                imageUrls: heroImageUrls 
+            },
             featured: { showPromo, promoImageUrl }
         });
         toast({
@@ -156,7 +191,19 @@ export default function AdminDashboardPage() {
             title: "Save Failed",
             description: "Could not update content."
         });
+    } finally {
+        setIsSavingContent(false);
     }
+  };
+
+  const addHeroImage = async (url: string) => {
+      await saveToLibrary(url);
+      setHeroImageUrls(prev => [...prev, url]);
+      toast({ title: 'Image Added', description: 'Hero image added.' });
+  };
+
+  const removeHeroImage = (index: number) => {
+      setHeroImageUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   // --- Image Handlers ---
@@ -223,12 +270,13 @@ export default function AdminDashboardPage() {
   };
 
   const handleSaveProduct = async () => {
-      try {
-        if (!productForm.name || !productForm.price) {
-            toast({ variant: 'destructive', title: 'Validation Error', description: 'Name and Price are required.' });
-            return;
-        }
+      if (!productForm.name || !productForm.price) {
+          toast({ variant: 'destructive', title: 'Validation Error', description: 'Name and Price are required.' });
+          return;
+      }
+      setIsSavingProduct(true);
 
+      try {
         const slug = productForm.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
         const dataToSave: any = {
             ...productForm,
@@ -251,6 +299,8 @@ export default function AdminDashboardPage() {
 
       } catch (error) {
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to save product.' });
+      } finally {
+        setIsSavingProduct(false);
       }
   };
 
@@ -290,7 +340,12 @@ export default function AdminDashboardPage() {
   ];
 
   if (isLoading) {
-      return <div className="p-10 text-center">Loading dashboard data...</div>;
+      return (
+          <div className="flex items-center justify-center min-h-[60vh]">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+              <span>Loading dashboard...</span>
+          </div>
+      );
   }
 
   return (
@@ -366,64 +421,96 @@ export default function AdminDashboardPage() {
                 Update text and featured sections on the homepage.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="hero-title">Hero Title</Label>
-                <Input
-                  id="hero-title"
-                  value={heroTitle}
-                  onChange={(e) => setHeroTitle(e.target.value)}
-                />
+            <CardContent className="space-y-8">
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="hero-title">Hero Title</Label>
+                    <Input
+                    id="hero-title"
+                    value={heroTitle}
+                    onChange={(e) => setHeroTitle(e.target.value)}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="hero-subtitle">Hero Subtitle</Label>
+                    <Input
+                    id="hero-subtitle"
+                    value={heroSubtitle}
+                    onChange={(e) => setHeroSubtitle(e.target.value)}
+                    />
+                </div>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="hero-subtitle">Hero Subtitle</Label>
-                <Input
-                  id="hero-subtitle"
-                  value={heroSubtitle}
-                  onChange={(e) => setHeroSubtitle(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="hero-image">Hero Image URL</Label>
-                <Input
-                  id="hero-image"
-                  value={heroImageUrl}
-                  onChange={(e) => setHeroImageUrl(e.target.value)}
-                  placeholder="https://..."
-                />
-                <p className="text-xs text-muted-foreground">Upload an image in the Images tab and copy its URL here.</p>
+                <Label>Hero Images (Direct Upload)</Label>
+                <CardDescription className="mb-2">Upload multiple images for the home page slideshow.</CardDescription>
+                
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {heroImageUrls.map((url, idx) => (
+                        <div key={idx} className="relative aspect-video bg-muted rounded-md overflow-hidden group border">
+                            <img src={url} className="object-cover w-full h-full" alt="Hero" />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                 <Button variant="destructive" size="icon" onClick={() => removeHeroImage(idx)}>
+                                    <Trash2 className="h-4 w-4"/>
+                                 </Button>
+                            </div>
+                        </div>
+                    ))}
+                    <div className="flex items-center justify-center p-4 border border-dashed rounded-md bg-muted/20 hover:bg-muted/40 transition-colors">
+                        <div className="text-center w-full">
+                            <ImageUpload onUploadComplete={addHeroImage} />
+                            <p className="text-xs text-muted-foreground mt-2">New Upload</p>
+                        </div>
+                    </div>
+                </div>
               </div>
 
               <div className="border-t pt-6">
                 <h3 className="text-lg font-semibold mb-4">
                   Featured Settings
                 </h3>
-                <div className="space-y-4">
+                <div className="grid gap-6">
                     <div className="flex items-center space-x-2">
-                    <Switch 
-                        id="show-promo" 
-                        checked={showPromo} 
-                        onCheckedChange={setShowPromo} 
-                    />
-                    <Label htmlFor="show-promo">
-                        Show "Build Custom Bouquet" Promo Section
-                    </Label>
+                        <Switch 
+                            id="show-promo" 
+                            checked={showPromo} 
+                            onCheckedChange={setShowPromo} 
+                        />
+                        <Label htmlFor="show-promo">
+                            Show "Build Custom Bouquet" Promo Section
+                        </Label>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="promo-image">Promo Image URL</Label>
-                        <Input
-                        id="promo-image"
-                        value={promoImageUrl}
-                        onChange={(e) => setPromoImageUrl(e.target.value)}
-                        placeholder="https://..."
-                        />
+                        <Label>Promo Image (Direct Upload)</Label>
+                        <div className="flex gap-4 items-start">
+                            {promoImageUrl && (
+                                <div className="relative w-32 h-32 rounded-md overflow-hidden border">
+                                    <img src={promoImageUrl} className="object-cover w-full h-full" alt="Promo" />
+                                     <Button 
+                                        variant="destructive" 
+                                        size="icon" 
+                                        className="absolute top-1 right-1 h-6 w-6" 
+                                        onClick={() => setPromoImageUrl('')}
+                                     >
+                                        <X className="h-3 w-3" />
+                                     </Button>
+                                </div>
+                            )}
+                            <ImageUpload 
+                                onUploadComplete={async (url) => {
+                                    await saveToLibrary(url);
+                                    setPromoImageUrl(url);
+                                }} 
+                            />
+                        </div>
                     </div>
                 </div>
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleSaveContent}>
-                <Save className="mr-2 h-4 w-4" /> Save Changes
+              <Button onClick={handleSaveContent} disabled={isSavingContent}>
+                {isSavingContent && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
               </Button>
             </CardFooter>
           </Card>
@@ -512,14 +599,25 @@ export default function AdminDashboardPage() {
                             </Select>
                         </div>
                         <div className="space-y-2">
-                             <Label>Display Image URL</Label>
-                             <div className="flex gap-2">
-                                 <Input value={productForm.images?.[0] || ''} onChange={(e) => setProductForm({...productForm, images: [e.target.value]})} placeholder="https://..." />
-                             </div>
-                             <p className="text-xs text-muted-foreground">Or upload a new one below and copy the URL.</p>
-                             <div className="border p-4 rounded-md">
-                                 <Label className="mb-2 block">Quick Upload</Label>
-                                 <ImageUpload onUploadComplete={(url) => setProductForm({...productForm, images: [url]})} />
+                             <Label>Product Image (Direct Upload)</Label>
+                             <div className="flex items-start gap-4 p-4 border rounded-md">
+                                 {productForm.images && productForm.images[0] ? (
+                                     <div className="relative w-24 h-24 rounded overflow-hidden">
+                                         <img src={productForm.images[0]} className="w-full h-full object-cover" alt="Product" />
+                                         <Button variant="ghost" size="icon" className="absolute top-0 right-0 h-5 w-5 bg-white/50 hover:bg-white" onClick={() => setProductForm({...productForm, images: []})}>
+                                            <X className="h-3 w-3"/>
+                                         </Button>
+                                     </div>
+                                 ) : (
+                                     <div className="text-sm text-muted-foreground self-center">No image selected</div>
+                                 )}
+                                 <div className="flex-1">
+                                    <ImageUpload onUploadComplete={async (url) => {
+                                         await saveToLibrary(url);
+                                         setProductForm({...productForm, images: [url]});
+                                    }} />
+                                    <p className="text-xs text-muted-foreground mt-2">Upload replaces current image.</p>
+                                 </div>
                              </div>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -528,7 +626,10 @@ export default function AdminDashboardPage() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button onClick={handleSaveProduct}>Save Product</Button>
+                        <Button onClick={handleSaveProduct} disabled={isSavingProduct}>
+                            {isSavingProduct && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Save Product
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

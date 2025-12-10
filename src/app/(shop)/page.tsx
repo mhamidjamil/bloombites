@@ -72,31 +72,59 @@ export default function Home() {
   // Fallbacks
   const heroTitle = content?.hero?.title || "Edible Art, Deliciously Delivered.";
   const heroSubtitle = content?.hero?.subtitle || "Surprise your loved ones with our handcrafted snack bouquets. The perfect blend of elegance and flavor for every occasion.";
-  const heroImageUrl = content?.hero?.imageUrl;
   
-  // Use DB featured products, or fallback to mock if DB is empty (for demo purposes if user hasn't populated yet)
-  // In a strict real-world scenario we might show empty, but for "refining" the app we want it to look good.
+  // Resolve Hero Images
+  let displayHeroImages: string[] = [];
+  if (content?.hero?.imageUrls && content.hero.imageUrls.length > 0) {
+      displayHeroImages = content.hero.imageUrls;
+  } else if (content?.hero?.imageUrl) {
+      displayHeroImages = [content.hero.imageUrl];
+  } else {
+      const defaultHero = placeholderImages.find((p) => p.id === 'hero-bouquet');
+      displayHeroImages = [defaultHero?.imageUrl || '/placeholder.jpg'];
+  }
+
+  // Hero Slideshow Logic
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    if (displayHeroImages.length <= 1) return;
+    const interval = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % displayHeroImages.length);
+    }, 5000); // Change every 5 seconds
+    return () => clearInterval(interval);
+  }, [displayHeroImages.length]);
+  
   const featured = products.filter(p => p.isFeatured);
   const displayFeatured = featured.length > 0 ? featured : (products.length === 0 ? mockFeatured : []);
-
-  const defaultHero = placeholderImages.find((p) => p.id === 'hero-bouquet');
   
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[85vh] w-full overflow-hidden">
-         <Image
-            src={heroImageUrl || defaultHero?.imageUrl || '/placeholder.jpg'}
-            alt="Hero Bouquet"
-            fill
-            className="object-cover"
-            priority
-            unoptimized={!!heroImageUrl} // Unoptimized if external R2 URL
-          />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
+      <section className="relative h-[85vh] w-full overflow-hidden bg-black">
+         {/* Background Slideshow */}
+         <div className="absolute inset-0 w-full h-full">
+            {displayHeroImages.map((url, idx) => (
+                <div 
+                    key={idx} 
+                    className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${currentSlide === idx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                >
+                    <Image
+                        src={url}
+                        alt={`Hero image ${idx + 1}`}
+                        fill
+                        className="object-cover"
+                        priority={idx === 0}
+                        unoptimized={url.startsWith('http')}
+                    />
+                </div>
+            ))}
+         </div>
 
-        <div className="relative z-10 container mx-auto h-full flex flex-col justify-center px-4 md:px-6">
+        <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+        <div className="absolute inset-0 z-20 bg-gradient-to-r from-black/60 to-transparent" />
+
+        <div className="relative z-30 container mx-auto h-full flex flex-col justify-center px-4 md:px-6">
           <div className="max-w-3xl animate-in fade-in slide-in-from-bottom-5 duration-1000">
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold font-headline text-white drop-shadow-xl leading-tight">
               {heroTitle.split(',')[0]}, <br />
@@ -123,6 +151,20 @@ export default function Home() {
               </Button>
             </div>
           </div>
+          
+          {/* Slide Indicators */}
+          {displayHeroImages.length > 1 && (
+              <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-2 z-30">
+                  {displayHeroImages.map((_, idx) => (
+                      <button 
+                        key={idx}
+                        className={`h-2 rounded-full transition-all ${currentSlide === idx ? 'w-8 bg-primary' : 'w-2 bg-white/50 hover:bg-white/80'}`}
+                        onClick={() => setCurrentSlide(idx)}
+                        aria-label={`Go to slide ${idx + 1}`}
+                      />
+                  ))}
+              </div>
+          )}
         </div>
       </section>
 
