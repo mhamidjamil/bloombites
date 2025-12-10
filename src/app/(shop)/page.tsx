@@ -25,21 +25,40 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    
+    // Safety timeout to prevent infinite loading if DB is unreachable
+    const timeoutId = setTimeout(() => {
+        if (isMounted) {
+            console.warn("Home page data fetch timed out.");
+            setIsLoading(false);
+        }
+    }, 5000);
+
     async function fetchData() {
       try {
         const [pageData, bouquetsData] = await Promise.all([
           getLandingPageData(),
           getBouquets()
         ]);
-        setContent(pageData);
-        setProducts(bouquetsData);
+        if (isMounted) {
+            setContent(pageData);
+            setProducts(bouquetsData);
+            // Cancel timeout if successful load happens before it
+            clearTimeout(timeoutId);
+            setIsLoading(false);
+        }
       } catch (error) {
         console.error("Failed to load home data", error);
-      } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     }
     fetchData();
+
+    return () => {
+        isMounted = false;
+        clearTimeout(timeoutId);
+    };
   }, []);
 
   if (isLoading) {

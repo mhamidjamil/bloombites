@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import Header from '@/components/header';
-import Footer from '@/components/footer';
 import { AuthProvider } from '@/lib/auth-context';
 import { ThemeProvider } from '@/components/theme-provider';
 import FirebaseClientProvider from '@/firebase/client-provider';
@@ -40,11 +38,7 @@ export default function RootLayout({
         >
           <FirebaseClientProvider>
             <AuthProvider>
-              <div className="flex min-h-screen flex-col">
-                <Header />
-                <main className="flex-grow">{children}</main>
-                <Footer />
-              </div>
+              {children}
               <Toaster />
             </AuthProvider>
           </FirebaseClientProvider>
