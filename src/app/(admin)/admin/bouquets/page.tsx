@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { PlusCircle, Edit, Trash2, Loader2, X, MoreHorizontal } from 'lucide-react';
 import {
   Table,
@@ -32,7 +32,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import ImageUpload from '@/components/image-upload';
+import ImagePicker from '@/components/image-picker';
 import { useToast } from '@/hooks/use-toast';
 import { 
   getBouquets, 
@@ -40,12 +40,13 @@ import {
   updateProduct, 
   deleteProduct,
   addSiteImage,
-  getSiteImages
+  getCategories
 } from '@/lib/db-service';
-import type { Bouquet } from '@/lib/types';
+import type { Bouquet, Category } from '@/lib/types';
 
 export default function AdminBouquetsPage() {
   const [products, setProducts] = useState<Bouquet[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Bouquet | null>(null);
@@ -56,7 +57,7 @@ export default function AdminBouquetsPage() {
       name: '',
       description: '',
       price: 0,
-      category: 'mixed',
+      category: '',
       images: [],
       isFeatured: false,
       isEnabled: true,
@@ -66,10 +67,14 @@ export default function AdminBouquetsPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const data = await getBouquets();
-      setProducts(data);
+      const [featchedProducts, fetchedCategories] = await Promise.all([
+          getBouquets(),
+          getCategories()
+      ]);
+      setProducts(featchedProducts);
+      setCategories(fetchedCategories);
     } catch (error) {
-      toast({ variant: "destructive", title: "Error", description: "Failed to load bouquets." });
+      toast({ variant: "destructive", title: "Error", description: "Failed to load data." });
     } finally {
       setIsLoading(false);
     }
@@ -79,13 +84,15 @@ export default function AdminBouquetsPage() {
     loadData();
   }, []);
 
+  const productCategories = categories.filter(c => c.type === 'product');
+
   const openNewDialog = () => {
       setEditingProduct(null);
       setFormData({
         name: '',
         description: '',
         price: 0,
-        category: 'mixed',
+        category: productCategories[0]?.slug || 'mixed',
         images: [''],
         isFeatured: false,
         isEnabled: true,
@@ -100,21 +107,12 @@ export default function AdminBouquetsPage() {
       setIsDialogOpen(true);
   };
 
-  // Helper to save image to library history silently
-  const saveToLibrary = async (url: string) => {
-      try {
-           const newImage = {
-              url,
-              name: 'Bouquet Image',
-              description: 'Uploaded via Bouquets Page',
-              uploadedAt: Date.now()
-          };
-          await addSiteImage(newImage);
-      } catch(e) {
-          console.error("Failed to save to library history", e);
-      }
-    };
-
+  // Helper to save image to library history silently if it's new
+  // But ImagePicker handles the "Upload" part. For URL part, we might want to track it.
+  // Actually, let's just use the URL. The library tracking is nice but not strictly required for "Paste URL" feature unless desired.
+  // I will skip explicit library add for "Paste URL" here to keep it simple, 
+  // relying on ImagePicker's upload behavior for uploads.
+  
   const handleSave = async () => {
       if (!formData.name || !formData.price) {
           toast({ variant: 'destructive', title: 'Validation Error', description: 'Name and Price are required.' });
@@ -198,7 +196,9 @@ export default function AdminBouquetsPage() {
                   </TableCell>
                   <TableCell className="font-medium">{bouquet.name}<br/><span className="text-xs text-muted-foreground">{bouquet.slug}</span></TableCell>
                   <TableCell>{bouquet.price.toLocaleString()}</TableCell>
-                  <TableCell className="capitalize">{bouquet.category}</TableCell>
+                  <TableCell className="capitalize">
+                      {categories.find(c => c.slug === bouquet.category)?.name || bouquet.category}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={bouquet.isEnabled ? 'default' : 'secondary'}>
                       {bouquet.isEnabled ? 'Active' : 'Draft'}
@@ -245,15 +245,15 @@ export default function AdminBouquetsPage() {
                     <Select value={formData.category} onValueChange={(val: any) => setFormData({...formData, category: val})}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="chocolates">Chocolates</SelectItem>
-                            <SelectItem value="chips">Chips</SelectItem>
-                            <SelectItem value="mixed">Mixed</SelectItem>
-                            <SelectItem value="premium">Premium</SelectItem>
+                            {productCategories.length === 0 && <SelectItem value="mixed">Mixed (Default)</SelectItem>}
+                            {productCategories.map(cat => (
+                                <SelectItem key={cat.id} value={cat.slug}>{cat.name}</SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </div>
                 <div className="space-y-2">
-                     <Label>Image (Direct Upload)</Label>
+                     <Label>Image</Label>
                      <div className="flex gap-4 items-start border p-4 rounded-md">
                          {formData.images?.[0] ? (
                              <div className="relative w-24 h-24 rounded overflow-hidden flex-shrink-0">
@@ -263,11 +263,8 @@ export default function AdminBouquetsPage() {
                                  </Button>
                              </div>
                          ) : <div className="w-24 h-24 bg-muted rounded flex items-center justify-center text-xs">No Image</div>}
-                         <div className="flex-1">
-                             <ImageUpload onUploadComplete={async (url) => {
-                                 await saveToLibrary(url);
-                                 setFormData({...formData, images: [url]});
-                             }} />
+                         <div className="flex-1 w-full min-w-0">
+                             <ImagePicker onImageSelected={(url) => setFormData({...formData, images: [url]})} />
                          </div>
                      </div>
                 </div>

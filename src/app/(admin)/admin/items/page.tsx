@@ -29,19 +29,21 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import ImageUpload from '@/components/image-upload';
+import ImagePicker from '@/components/image-picker';
 import { useToast } from '@/hooks/use-toast';
 import { 
   getCustomItems, 
   addCustomItem, 
   updateCustomItem, 
   deleteCustomItem,
-  addSiteImage 
+  addSiteImage,
+  getCategories
 } from '@/lib/db-service';
-import type { CustomItem } from '@/lib/types';
+import type { CustomItem, Category } from '@/lib/types';
 
 export default function AdminItemsPage() {
   const [items, setItems] = useState<CustomItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CustomItem | null>(null);
@@ -51,17 +53,21 @@ export default function AdminItemsPage() {
   const [formData, setFormData] = useState<Partial<CustomItem>>({
       name: '',
       price: 0,
-      category: 'chocolates',
+      category: '',
       image: ''
   });
 
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const data = await getCustomItems();
-      setItems(data);
+      const [fetchedItems, fetchedCategories] = await Promise.all([
+          getCustomItems(),
+          getCategories()
+      ]);
+      setItems(fetchedItems);
+      setCategories(fetchedCategories);
     } catch (error) {
-      toast({ variant: "destructive", title: "Error", description: "Failed to load custom items." });
+      toast({ variant: "destructive", title: "Error", description: "Failed to load data." });
     } finally {
       setIsLoading(false);
     }
@@ -71,12 +77,14 @@ export default function AdminItemsPage() {
     loadData();
   }, []);
 
+  const itemCategories = categories.filter(c => c.type === 'item');
+
   const openNewDialog = () => {
       setEditingItem(null);
       setFormData({
         name: '',
         price: 0,
-        category: 'chocolates',
+        category: itemCategories[0]?.slug || 'chocolates',
         image: ''
       });
       setIsDialogOpen(true);
@@ -86,21 +94,6 @@ export default function AdminItemsPage() {
       setEditingItem(item);
       setFormData({ ...item });
       setIsDialogOpen(true);
-  };
-
-   // Helper to save image to library history silently
-   const saveToLibrary = async (url: string) => {
-    try {
-         const newImage = {
-            url,
-            name: 'Custom Item Image',
-            description: 'Uploaded via items Page',
-            uploadedAt: Date.now()
-        };
-        await addSiteImage(newImage);
-    } catch(e) {
-        console.error("Failed to save to library history", e);
-    }
   };
 
   const handleSave = async () => {
@@ -183,7 +176,7 @@ export default function AdminItemsPage() {
                   </TableCell>
                   <TableCell className="font-medium">{item.name}</TableCell>
                   <TableCell className="capitalize">
-                    {item.category?.replace('-', ' ')}
+                    {categories.find(c => c.slug === item.category)?.name || item.category}
                   </TableCell>
                   <TableCell>{item.price.toLocaleString()}</TableCell>
                   <TableCell className="text-right">
@@ -228,16 +221,15 @@ export default function AdminItemsPage() {
                     <Select value={formData.category} onValueChange={(val: any) => setFormData({...formData, category: val})}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="chocolates">Chocolates</SelectItem>
-                            <SelectItem value="snacks">Snacks</SelectItem>
-                            <SelectItem value="dry-fruits">Dry Fruits</SelectItem>
-                            <SelectItem value="notes-cards">Notes & Cards</SelectItem>
-                            <SelectItem value="premium-add-ons">Premium Add-ons</SelectItem>
+                            {itemCategories.length === 0 && <SelectItem value="chocolates">Chocolates (Default)</SelectItem>}
+                            {itemCategories.map(cat => (
+                                <SelectItem key={cat.id} value={cat.slug}>{cat.name}</SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </div>
                 <div className="space-y-2">
-                     <Label>Image (Direct Upload)</Label>
+                     <Label>Image</Label>
                      <div className="flex gap-4 items-start border p-4 rounded-md">
                          {formData.image ? (
                              <div className="relative w-20 h-20 rounded overflow-hidden flex-shrink-0">
@@ -247,11 +239,8 @@ export default function AdminItemsPage() {
                                  </Button>
                              </div>
                          ) : <div className="w-20 h-20 bg-muted rounded flex items-center justify-center text-xs">No Img</div>}
-                         <div className="flex-1">
-                             <ImageUpload onUploadComplete={async (url) => {
-                                 await saveToLibrary(url);
-                                 setFormData({...formData, image: url});
-                             }} />
+                         <div className="flex-1 w-full min-w-0">
+                             <ImagePicker onImageSelected={(url) => setFormData({...formData, image: url})} />
                          </div>
                      </div>
                 </div>

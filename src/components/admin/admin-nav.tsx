@@ -16,6 +16,7 @@ import {
   Users,
   LogOut,
   Settings,
+  Tags,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
@@ -25,6 +26,7 @@ const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/bouquets', label: 'Bouquets', icon: Package },
   { href: '/admin/items', label: 'Items', icon: ShoppingBasket },
+  { href: '/admin/categories', label: 'Categories', icon: Tags },
   { href: '/admin/orders', label: 'Orders', icon: Users },
 ];
 

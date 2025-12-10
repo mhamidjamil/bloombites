@@ -57,7 +57,8 @@ import {
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import ImageUpload from '@/components/image-upload';
+import ImageUpload from '@/components/image-upload'; // Keep for Images tab direct usage or replace there too? User said "all over the app". I will use ImagePicker there too.
+import ImagePicker from '@/components/image-picker';
 import { 
   getLandingPageData, 
   updateLandingPageData, 
@@ -68,7 +69,9 @@ import {
   addProduct,
   updateProduct,
   deleteProduct,
-  type SiteImage 
+  getCategories,
+  type SiteImage,
+  type Category
 } from '@/lib/db-service';
 import type { Bouquet } from '@/lib/types';
 
@@ -87,6 +90,7 @@ export default function AdminDashboardPage() {
 
   // Products State
   const [products, setProducts] = useState<Bouquet[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Bouquet | null>(null);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
@@ -96,7 +100,7 @@ export default function AdminDashboardPage() {
       name: '',
       description: '',
       price: 0,
-      category: 'mixed',
+      category: '',
       images: [],
       isFeatured: false,
       isEnabled: true,
@@ -110,8 +114,14 @@ export default function AdminDashboardPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
+      const [content, fetchedImages, fetchedProducts, fetchedCategories] = await Promise.all([
+          getLandingPageData(),
+          getSiteImages(),
+          getBouquets(),
+          getCategories()
+      ]);
+
       // Load Content
-      const content = await getLandingPageData();
       if (content) {
         setHeroTitle(content.hero?.title || '');
         setHeroSubtitle(content.hero?.subtitle || '');
@@ -127,13 +137,9 @@ export default function AdminDashboardPage() {
         setPromoImageUrl(content.featured?.promoImageUrl || '');
       }
 
-      // Load Images
-      const fetchedImages = await getSiteImages();
       setImages(fetchedImages);
-
-      // Load Products
-      const fetchedProducts = await getBouquets();
       setProducts(fetchedProducts);
+      setCategories(fetchedCategories);
 
     } catch (error) {
         console.error("Failed to load admin data", error);
@@ -150,23 +156,6 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     loadData();
   }, []);
-
-  // --- Helper: Save uploaded image to library silently ---
-  const saveToLibrary = async (url: string) => {
-    try {
-         const newImage = {
-            url,
-            name: 'Direct Upload',
-            description: 'Uploaded via Content/Product Editor',
-            uploadedAt: Date.now()
-        };
-        await addSiteImage(newImage);
-        // Refresh library in background
-        getSiteImages().then(setImages);
-    } catch(e) {
-        console.error("Failed to save to library history", e);
-    }
-  };
 
   // --- Content Handlers ---
   const handleSaveContent = async () => {
@@ -196,8 +185,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const addHeroImage = async (url: string) => {
-      await saveToLibrary(url);
+  const addHeroImage = (url: string) => {
       setHeroImageUrls(prev => [...prev, url]);
       toast({ title: 'Image Added', description: 'Hero image added.' });
   };
@@ -208,28 +196,32 @@ export default function AdminDashboardPage() {
 
   // --- Image Handlers ---
   const handleImageUploaded = async (url: string) => {
-    try {
-        const newImage = {
-            url,
-            name: 'Uploaded Image',
-            description: 'Uploaded via Admin Dashboard',
-            uploadedAt: Date.now()
-        };
-        await addSiteImage(newImage);
-        toast({
-            title: 'Image Saved',
-            description: 'Image has been uploaded and saved to library.',
-        });
-        // Refresh images
-        const fetchedImages = await getSiteImages();
-        setImages(fetchedImages);
-    } catch (error) {
-        toast({
-            variant: "destructive",
-            title: "Save Failed",
-            description: "Could not save image record."
-        });
-    }
+      // ImagePicker handles saving to library for uploads. 
+      // But if user uses URL tab in Images tab, we might want to explicitly save it? 
+      // ImagePicker's URL tab doesn't auto-save to library currently. 
+      // Let's force save here if it's new.
+      // Actually, for the "Images" tab, reusing ImagePicker is tricky if I want "Paste URL" to also create a library entry.
+      // I'll assume if they use "Paste URL" here, they want to add it to library.
+      try {
+        const exists = images.find(i => i.url === url);
+        if (!exists) {
+            const newImage = {
+                url,
+                name: 'Added Image',
+                description: 'Start managing this image',
+                uploadedAt: Date.now()
+            };
+            await addSiteImage(newImage);
+            const fresh = await getSiteImages();
+            setImages(fresh);
+             toast({
+                title: 'Image Saved',
+                description: 'Image added to library.',
+            });
+        }
+      } catch (e) {
+          console.error(e);
+      }
   };
 
   const handleDeleteImage = async (id: string) => {
@@ -254,7 +246,7 @@ export default function AdminDashboardPage() {
         name: '',
         description: '',
         price: 0,
-        category: 'mixed',
+        category: categories.find(c => c.type === 'product')?.slug || '',
         images: [''],
         isFeatured: false,
         isEnabled: true,
@@ -320,6 +312,8 @@ export default function AdminDashboardPage() {
       img.name?.toLowerCase().includes(imageSearch.toLowerCase()) ||
       img.description?.toLowerCase().includes(imageSearch.toLowerCase())
   );
+
+  const productCategories = categories.filter(c => c.type === 'product');
 
   const stats = [
     {
@@ -442,8 +436,8 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Hero Images (Direct Upload)</Label>
-                <CardDescription className="mb-2">Upload multiple images for the home page slideshow.</CardDescription>
+                <Label>Hero Images</Label>
+                <CardDescription className="mb-2">Upload or paste links for hero slideshow.</CardDescription>
                 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {heroImageUrls.map((url, idx) => (
@@ -456,11 +450,9 @@ export default function AdminDashboardPage() {
                             </div>
                         </div>
                     ))}
-                    <div className="flex items-center justify-center p-4 border border-dashed rounded-md bg-muted/20 hover:bg-muted/40 transition-colors">
-                        <div className="text-center w-full">
-                            <ImageUpload onUploadComplete={addHeroImage} />
-                            <p className="text-xs text-muted-foreground mt-2">New Upload</p>
-                        </div>
+                    <div className="p-2 border border-dashed rounded-md bg-muted/20 hover:bg-muted/40 transition-colors">
+                         <div className="text-xs text-center mb-2 font-medium">Add Image</div>
+                         <ImagePicker onImageSelected={addHeroImage} />
                     </div>
                 </div>
               </div>
@@ -481,10 +473,10 @@ export default function AdminDashboardPage() {
                         </Label>
                     </div>
                     <div className="space-y-2">
-                        <Label>Promo Image (Direct Upload)</Label>
-                        <div className="flex gap-4 items-start">
+                        <Label>Promo Image</Label>
+                        <div className="flex gap-4 items-start flex-col md:flex-row">
                             {promoImageUrl && (
-                                <div className="relative w-32 h-32 rounded-md overflow-hidden border">
+                                <div className="relative w-full md:w-48 aspect-video rounded-md overflow-hidden border shrink-0">
                                     <img src={promoImageUrl} className="object-cover w-full h-full" alt="Promo" />
                                      <Button 
                                         variant="destructive" 
@@ -496,12 +488,9 @@ export default function AdminDashboardPage() {
                                      </Button>
                                 </div>
                             )}
-                            <ImageUpload 
-                                onUploadComplete={async (url) => {
-                                    await saveToLibrary(url);
-                                    setPromoImageUrl(url);
-                                }} 
-                            />
+                            <div className="flex-1 w-full">
+                                <ImagePicker onImageSelected={setPromoImageUrl} />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -591,32 +580,28 @@ export default function AdminDashboardPage() {
                                     <SelectValue placeholder="Select Category" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="chocolates">Chocolates</SelectItem>
-                                    <SelectItem value="chips">Chips</SelectItem>
-                                    <SelectItem value="mixed">Mixed</SelectItem>
-                                    <SelectItem value="premium">Premium</SelectItem>
+                                    {productCategories.length === 0 && <SelectItem value="mixed">Mixed (Default)</SelectItem>}
+                                    {productCategories.map(cat => (
+                                        <SelectItem key={cat.id} value={cat.slug}>{cat.name}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
-                             <Label>Product Image (Direct Upload)</Label>
+                             <Label>Product Image</Label>
                              <div className="flex items-start gap-4 p-4 border rounded-md">
                                  {productForm.images && productForm.images[0] ? (
-                                     <div className="relative w-24 h-24 rounded overflow-hidden">
+                                     <div className="relative w-24 h-24 rounded overflow-hidden shrink-0">
                                          <img src={productForm.images[0]} className="w-full h-full object-cover" alt="Product" />
                                          <Button variant="ghost" size="icon" className="absolute top-0 right-0 h-5 w-5 bg-white/50 hover:bg-white" onClick={() => setProductForm({...productForm, images: []})}>
                                             <X className="h-3 w-3"/>
                                          </Button>
                                      </div>
                                  ) : (
-                                     <div className="text-sm text-muted-foreground self-center">No image selected</div>
+                                     <div className="text-sm text-muted-foreground self-center">No image</div>
                                  )}
-                                 <div className="flex-1">
-                                    <ImageUpload onUploadComplete={async (url) => {
-                                         await saveToLibrary(url);
-                                         setProductForm({...productForm, images: [url]});
-                                    }} />
-                                    <p className="text-xs text-muted-foreground mt-2">Upload replaces current image.</p>
+                                 <div className="flex-1 min-w-0">
+                                    <ImagePicker onImageSelected={(url) => setProductForm({...productForm, images: [url]})} />
                                  </div>
                              </div>
                         </div>
@@ -641,14 +626,14 @@ export default function AdminDashboardPage() {
             <CardHeader>
               <CardTitle>Image Library</CardTitle>
               <CardDescription>
-                Manage images used across the site. Uploaded images are stored in Cloudflare R2.
+                Manage images used across the site.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-end gap-4">
                  <div className="flex-1 space-y-2">
-                    <Label>Upload New Image</Label>
-                    <ImageUpload onUploadComplete={handleImageUploaded} />
+                    <Label>Add New Image</Label>
+                    <ImagePicker onImageSelected={handleImageUploaded} />
                  </div>
               </div>
               
@@ -664,7 +649,7 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[600px] overflow-y-auto pr-2">
                 {filteredImages.length === 0 && (
                     <div className="col-span-2 text-center text-muted-foreground py-8">
-                        No images found. Upload one to get started!
+                        No images found.
                     </div>
                 )}
                 {filteredImages.map((img) => (
@@ -705,3 +690,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+

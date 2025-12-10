@@ -55,7 +55,7 @@ export interface SiteImage {
   uploadedAt: number;
 }
 
-import { Bouquet, CustomItem } from './types';
+import { Bouquet, CustomItem, Category } from './types';
 
 export const getSiteImages = async (): Promise<SiteImage[]> => {
   const colRef = collection(firestore, 'site_images');
@@ -70,6 +70,23 @@ export const addSiteImage = async (image: Omit<SiteImage, 'id'>) => {
 
 export const deleteSiteImage = async (id: string) => {
   const docRef = doc(firestore, 'site_images', id);
+  await deleteDoc(docRef);
+};
+
+// --- Categories ---
+export const getCategories = async (): Promise<Category[]> => {
+  const colRef = collection(firestore, 'categories');
+  const snapshot = await getDocs(colRef);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+};
+
+export const addCategory = async (cat: Omit<Category, 'id'>) => {
+  const colRef = collection(firestore, 'categories');
+  await addDoc(colRef, cat);
+};
+
+export const deleteCategory = async (id: string) => {
+  const docRef = doc(firestore, 'categories', id);
   await deleteDoc(docRef);
 };
 

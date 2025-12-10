@@ -13,6 +13,13 @@ export type Address = {
   postalCode: string;
 };
 
+export type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  type: 'product' | 'item';
+};
+
 export type Bouquet = {
   id: string;
   name: string;
@@ -21,7 +28,7 @@ export type Bouquet = {
   price: number;
   images: string[]; // URLs to images
   items: string[];
-  category: 'chocolates' | 'chips' | 'mixed' | 'premium';
+  category: string;
   isFeatured?: boolean;
   isEnabled: boolean;
 };
@@ -30,12 +37,7 @@ export type Bouquet = {
 export type CustomItem = {
   id: string;
   name: string;
-  category:
-    | 'chocolates'
-    | 'snacks'
-    | 'dry-fruits'
-    | 'notes-cards'
-    | 'premium-add-ons';
+  category: string;
   price: number;
   image: string; // URL to image
 };
