@@ -26,10 +26,14 @@ export default function LoginPage() {
             router.push('/');
         } catch (error: any) {
             console.error(error);
+            let errorMessage = error.message || 'An unexpected error occurred.';
+            if (error.code === 'auth/invalid-credential' || error.message.includes('auth/invalid-credential')) {
+                errorMessage = 'Invalid email or password. Please try again.';
+            }
             toast({
                 variant: 'destructive',
                 title: 'Login Failed',
-                description: error.message || 'An unexpected error occurred.',
+                description: errorMessage,
             });
         } finally {
             setIsSubmitting(false);

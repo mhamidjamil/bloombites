@@ -170,6 +170,22 @@ export default function AdminDashboardPage() {
                                     className="max-w-sm"
                                 />
                             </div>
+                            
+                            <div className="border border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center space-y-4">
+                                <div className="p-3 bg-muted rounded-full">
+                                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                </div>
+                                <div className="space-y-1">
+                                    <h4 className="text-sm font-semibold">Upload an image</h4>
+                                    <p className="text-xs text-muted-foreground">
+                                        Drag and drop or click to upload
+                                    </p>
+                                </div>
+                                <Input type="file" className="max-w-xs" />
+                                <Button size="sm" onClick={() => toast({ title: "Image Uploaded", description: "This is a mock upload. In production, this would upload to Firebase Storage."})}>
+                                    Upload Image
+                                </Button>
+                            </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[600px] overflow-y-auto pr-2">
                                 {filteredImages.map((img) => (
