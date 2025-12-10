@@ -55,12 +55,11 @@ export interface SiteImage {
   uploadedAt: number;
 }
 
-import { Bouquet } from './types';
+import { Bouquet, CustomItem } from './types';
 
 export const getSiteImages = async (): Promise<SiteImage[]> => {
   const colRef = collection(firestore, 'site_images');
-  const q = query(colRef, orderBy('uploadedAt', 'desc'));
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(colRef);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SiteImage));
 };
 
@@ -98,5 +97,24 @@ export const deleteProduct = async (id: string) => {
   await deleteDoc(docRef);
 };
 
-// --- Bouquets / Products (Bonus: preparing for real product data) ---
-// For now we might stick to mock or migrate it if user asks, but let's focus on the asked content.
+// --- Custom Items ---
+export const getCustomItems = async (): Promise<CustomItem[]> => {
+  const colRef = collection(firestore, 'custom_items');
+  const snapshot = await getDocs(colRef);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CustomItem));
+};
+
+export const addCustomItem = async (item: Omit<CustomItem, 'id'>) => {
+  const colRef = collection(firestore, 'custom_items');
+  await addDoc(colRef, item);
+};
+
+export const updateCustomItem = async (id: string, data: Partial<CustomItem>) => {
+  const docRef = doc(firestore, 'custom_items', id);
+  await updateDoc(docRef, data);
+};
+
+export const deleteCustomItem = async (id: string) => {
+  const docRef = doc(firestore, 'custom_items', id);
+  await deleteDoc(docRef);
+};
