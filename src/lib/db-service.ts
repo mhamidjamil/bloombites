@@ -1,0 +1,101 @@
+import { initializeFirebase } from '@/firebase';
+import { 
+  collection, 
+  doc, 
+  getDoc, 
+  setDoc, 
+  getDocs, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc,
+  query,
+  orderBy
+} from 'firebase/firestore';
+
+const { firestore } = initializeFirebase();
+
+// --- Landing Page Content ---
+export interface HeroContent {
+  title: string;
+  subtitle: string;
+  imageUrl?: string;
+}
+
+export interface FeaturedSettings {
+  showPromo: boolean;
+  promoImageUrl?: string;
+}
+
+export interface LandingPageData {
+  hero: HeroContent;
+  featured: FeaturedSettings;
+}
+
+export const getLandingPageData = async (): Promise<LandingPageData | null> => {
+  const docRef = doc(firestore, 'content', 'landing-page');
+  const snapshot = await getDoc(docRef);
+  if (snapshot.exists()) {
+    return snapshot.data() as LandingPageData;
+  }
+  return null;
+};
+
+export const updateLandingPageData = async (data: Partial<LandingPageData>) => {
+  const docRef = doc(firestore, 'content', 'landing-page');
+  await setDoc(docRef, data, { merge: true });
+};
+
+// --- Images Management ---
+export interface SiteImage {
+  id?: string;
+  url: string;
+  name: string; // or description
+  description?: string;
+  uploadedAt: number;
+}
+
+import { Bouquet } from './types';
+
+export const getSiteImages = async (): Promise<SiteImage[]> => {
+  const colRef = collection(firestore, 'site_images');
+  const q = query(colRef, orderBy('uploadedAt', 'desc'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SiteImage));
+};
+
+export const addSiteImage = async (image: Omit<SiteImage, 'id'>) => {
+  const colRef = collection(firestore, 'site_images');
+  await addDoc(colRef, image);
+};
+
+export const deleteSiteImage = async (id: string) => {
+  const docRef = doc(firestore, 'site_images', id);
+  await deleteDoc(docRef);
+};
+
+// --- Products ---
+export const getBouquets = async (): Promise<Bouquet[]> => {
+  const colRef = collection(firestore, 'products');
+  const snapshot = await getDocs(colRef);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Bouquet));
+};
+
+export const addProduct = async (product: Omit<Bouquet, 'id'>) => {
+  const colRef = collection(firestore, 'products');
+  // Use slug as ID or let firestore gen ID? Firestore gen ID is safer.
+  // But we need slug for URL.
+  await addDoc(colRef, product);
+};
+
+export const updateProduct = async (id: string, data: Partial<Bouquet>) => {
+  const docRef = doc(firestore, 'products', id);
+  await updateDoc(docRef, data);
+};
+
+export const deleteProduct = async (id: string) => {
+  const docRef = doc(firestore, 'products', id);
+  await deleteDoc(docRef);
+};
+
+// --- Bouquets / Products (Bonus: preparing for real product data) ---
+// For now we might stick to mock or migrate it if user asks, but let's focus on the asked content.

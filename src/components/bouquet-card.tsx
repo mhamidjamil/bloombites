@@ -18,7 +18,16 @@ type BouquetCardProps = {
 };
 
 const BouquetCard = ({ bouquet }: BouquetCardProps) => {
-  const image = placeholderImages.find((p) => p.id === bouquet.images[0]);
+  let imageUrl = '/placeholder.jpg';
+  let imageHint = '';
+
+  const placeholder = placeholderImages.find((p) => p.id === bouquet.images[0]);
+  if (placeholder) {
+    imageUrl = placeholder.imageUrl;
+    imageHint = placeholder.imageHint;
+  } else if (bouquet.images && bouquet.images.length > 0) {
+    imageUrl = bouquet.images[0];
+  }
 
   return (
     <Card className="flex flex-col overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
@@ -27,16 +36,15 @@ const BouquetCard = ({ bouquet }: BouquetCardProps) => {
           href={`/shop/${bouquet.slug}`}
           className="block aspect-square relative"
         >
-          {image && (
-            <Image
-              src={image.imageUrl}
-              alt={bouquet.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              data-ai-hint={image.imageHint}
-            />
-          )}
+          <Image
+            src={imageUrl}
+            alt={bouquet.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            data-ai-hint={imageHint}
+            unoptimized={imageUrl.startsWith('http')}
+          />
         </Link>
       </CardHeader>
       <CardContent className="p-4 flex-grow">
