@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
-import Header from '@/components/header';
-import Footer from '@/components/footer';
+import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/lib/auth-context';
 import { ThemeProvider } from '@/components/theme-provider';
 import FirebaseClientProvider from '@/firebase/client-provider';
@@ -21,8 +19,15 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=PT+Sans:wght@400;700&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body className="font-body antialiased">
         <ThemeProvider
@@ -33,11 +38,7 @@ export default function RootLayout({
         >
           <FirebaseClientProvider>
             <AuthProvider>
-              <div className="flex min-h-screen flex-col">
-                <Header />
-                <main className="flex-grow">{children}</main>
-                <Footer />
-              </div>
+              {children}
               <Toaster />
             </AuthProvider>
           </FirebaseClientProvider>

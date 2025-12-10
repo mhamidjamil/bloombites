@@ -41,12 +41,13 @@ export function useUser() {
                 setUser({
                   ...firebaseUser,
                   ...data,
-                  role: token.claims.role,
+                  role:
+                    (data.role as 'admin' | 'customer') || token.claims.role,
                 });
               } else {
                 setUser({
                   ...firebaseUser,
-                  role: token.claims.role,
+                  role: token.claims.role as 'admin' | 'customer' | undefined,
                 });
               }
               setIsLoading(false);

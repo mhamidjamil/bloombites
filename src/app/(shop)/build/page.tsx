@@ -8,7 +8,8 @@ export default function BuildPage() {
           Custom Bouquet Builder
         </h1>
         <p className="mt-4 max-w-2xl mx-auto text-muted-foreground">
-          Design your own unique snack bouquet from scratch. Pick your favorite items and we'll craft it for you!
+          Design your own unique snack bouquet from scratch. Pick your favorite
+          items and we'll craft it for you!
         </p>
       </div>
       <CustomBouquetBuilder />

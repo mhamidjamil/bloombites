@@ -19,7 +19,11 @@ const FirebaseErrorListener: React.FC = () => {
 
   useEffect(() => {
     const handleError = (error: FirestorePermissionError) => {
-      console.error('Firestore Permission Error:', error.message, error.context);
+      console.error(
+        'Firestore Permission Error:',
+        error.message,
+        error.context
+      );
       toast({
         variant: 'destructive',
         title: 'Permission Denied',

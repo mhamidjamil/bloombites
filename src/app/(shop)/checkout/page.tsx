@@ -13,14 +13,14 @@ export default function CheckoutPage() {
 
   if (totalItems === 0) {
     if (typeof window !== 'undefined') {
-        router.push('/shop');
+      router.push('/shop');
     }
     return null; // or a loading spinner
   }
-  
+
   const handlePlaceOrder = () => {
     // In a real app, this would submit the order to the backend
-    console.log("Placing order...");
+    console.log('Placing order...');
     clearCart();
     // Show a success message/toast
     router.push('/order-confirmation'); // Redirect to a confirmation page
@@ -41,7 +41,9 @@ export default function CheckoutPage() {
         <div className="lg:col-span-2">
           <Card>
             <CardContent className="p-6">
-              <h2 className="text-2xl font-bold font-headline mb-6">Shipping Information</h2>
+              <h2 className="text-2xl font-bold font-headline mb-6">
+                Shipping Information
+              </h2>
               <form className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
@@ -49,7 +51,11 @@ export default function CheckoutPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" type="email" placeholder="john.doe@example.com" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="john.doe@example.com"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
@@ -60,14 +66,14 @@ export default function CheckoutPage() {
                   <Input id="address" placeholder="House 123, Street 45" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="city">City</Label>
-                        <Input id="city" placeholder="Karachi" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="province">Province</Label>
-                        <Input id="province" placeholder="Sindh" />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input id="city" placeholder="Karachi" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="province">Province</Label>
+                    <Input id="province" placeholder="Sindh" />
+                  </div>
                 </div>
               </form>
             </CardContent>
@@ -76,12 +82,19 @@ export default function CheckoutPage() {
         <div className="lg:col-span-1">
           <Card className="sticky top-24 shadow-lg">
             <CardContent className="p-6">
-              <h2 className="text-2xl font-bold font-headline mb-4">Order Summary</h2>
+              <h2 className="text-2xl font-bold font-headline mb-4">
+                Order Summary
+              </h2>
               <div className="space-y-2 max-h-60 overflow-y-auto pr-2 mb-4">
-                {items.map(item => (
+                {items.map((item) => (
                   <div key={item.id} className="flex justify-between text-sm">
-                    <span className="truncate pr-2">{item.product.name} x{item.quantity}</span>
-                    <span>PKR {(item.product.price * item.quantity).toLocaleString()}</span>
+                    <span className="truncate pr-2">
+                      {item.product.name} x{item.quantity}
+                    </span>
+                    <span>
+                      PKR{' '}
+                      {(item.product.price * item.quantity).toLocaleString()}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -103,7 +116,11 @@ export default function CheckoutPage() {
               <div className="bg-primary/10 p-3 rounded-md text-center text-sm text-primary-foreground">
                 Payment Method: Cash on Delivery
               </div>
-              <Button size="lg" className="w-full mt-4" onClick={handlePlaceOrder}>
+              <Button
+                size="lg"
+                className="w-full mt-4"
+                onClick={handlePlaceOrder}
+              >
                 Place Order
               </Button>
             </CardContent>
