@@ -10,7 +10,7 @@ import {
   signInWithEmailAndPassword,
 } from 'firebase/auth';
 import { doc, setDoc, getFirestore } from 'firebase/firestore';
-import { errorEmitter }from '@/firebase/error-emitter';
+import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
 interface AuthContextType {
@@ -50,18 +50,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       role: 'customer',
       name: user.displayName || '',
     };
-    
+
     const userDocRef = doc(firestore, 'users', user.uid);
 
-    setDoc(userDocRef, userProfile, { merge: true }).catch(async (serverError) => {
+    setDoc(userDocRef, userProfile, { merge: true }).catch(
+      async (serverError) => {
         const permissionError = new FirestorePermissionError({
           path: userDocRef.path,
           operation: 'create',
           requestResourceData: userProfile,
         });
         errorEmitter.emit('permission-error', permissionError);
-    });
-
+      }
+    );
 
     return userCredential;
   };
@@ -71,16 +72,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   useEffect(() => {
-    if (!isLoading && !user && (pathname.startsWith('/admin') || pathname === '/checkout')) {
+    if (
+      !isLoading &&
+      !user &&
+      (pathname.startsWith('/admin') || pathname === '/checkout')
+    ) {
       router.push('/login');
     }
   }, [user, isLoading, pathname, router]);
 
   const value = { user, loading: isLoading, login, logout, signup };
 
-  return (
-    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

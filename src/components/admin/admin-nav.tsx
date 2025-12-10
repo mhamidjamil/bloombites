@@ -9,7 +9,14 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import Logo from '../logo';
-import { LayoutDashboard, Package, ShoppingBasket, Users, LogOut, Settings } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Package,
+  ShoppingBasket,
+  Users,
+  LogOut,
+  Settings,
+} from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -34,25 +41,25 @@ export default function AdminNav() {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-                <Link href={item.href} className='w-full'>
-                    <SidebarMenuButton isActive={pathname === item.href}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.label}</span>
-                    </SidebarMenuButton>
+              <Link href={item.href} className="w-full">
+                <SidebarMenuButton isActive={pathname === item.href}>
+                  <item.icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
-         <SidebarMenu>
-             <SidebarMenuItem>
-                <SidebarMenuButton onClick={logout}>
-                    <LogOut className="h-4 w-4" />
-                    <span>Log Out</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-         </SidebarMenu>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={logout}>
+              <LogOut className="h-4 w-4" />
+              <span>Log Out</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </>
   );

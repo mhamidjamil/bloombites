@@ -73,17 +73,26 @@ const useCartStore = create<CartState>()(
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
         if (state) {
-            state.totalItems = state.items.reduce((acc, item) => acc + item.quantity, 0);
-            state.totalPrice = state.items.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+          state.totalItems = state.items.reduce(
+            (acc, item) => acc + item.quantity,
+            0
+          );
+          state.totalPrice = state.items.reduce(
+            (acc, item) => acc + item.product.price * item.quantity,
+            0
+          );
         }
-      }
+      },
     }
   )
 );
 
 const calculateTotals = (items: CartItem[]) => {
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
-  const totalPrice = items.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+  const totalPrice = items.reduce(
+    (acc, item) => acc + item.product.price * item.quantity,
+    0
+  );
   return { totalItems, totalPrice };
 };
 

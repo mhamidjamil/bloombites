@@ -8,8 +8,8 @@
  * - GenerateBouquetDescriptionOutput - The return type for the generateBouquetDescription function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const GenerateBouquetDescriptionInputSchema = z.object({
   items: z
@@ -17,13 +17,17 @@ const GenerateBouquetDescriptionInputSchema = z.object({
     .describe('List of items included in the custom bouquet.'),
   theme: z.string().describe('The theme or occasion for the bouquet.'),
 });
-export type GenerateBouquetDescriptionInput = z.infer<typeof GenerateBouquetDescriptionInputSchema>;
+export type GenerateBouquetDescriptionInput = z.infer<
+  typeof GenerateBouquetDescriptionInputSchema
+>;
 
 const GenerateBouquetDescriptionOutputSchema = z.object({
   name: z.string().describe('A descriptive name for the bouquet.'),
   description: z.string().describe('A short description of the bouquet.'),
 });
-export type GenerateBouquetDescriptionOutput = z.infer<typeof GenerateBouquetDescriptionOutputSchema>;
+export type GenerateBouquetDescriptionOutput = z.infer<
+  typeof GenerateBouquetDescriptionOutputSchema
+>;
 
 export async function generateBouquetDescription(
   input: GenerateBouquetDescriptionInput
@@ -33,8 +37,8 @@ export async function generateBouquetDescription(
 
 const prompt = ai.definePrompt({
   name: 'generateBouquetDescriptionPrompt',
-  input: {schema: GenerateBouquetDescriptionInputSchema},
-  output: {schema: GenerateBouquetDescriptionOutputSchema},
+  input: { schema: GenerateBouquetDescriptionInputSchema },
+  output: { schema: GenerateBouquetDescriptionOutputSchema },
   prompt: `You are a creative marketing expert specializing in naming and describing custom snack bouquets.
 
   Given the items included and the theme of the bouquet, generate a catchy name and a short, appealing description.
@@ -52,8 +56,8 @@ const generateBouquetDescriptionFlow = ai.defineFlow(
     inputSchema: GenerateBouquetDescriptionInputSchema,
     outputSchema: GenerateBouquetDescriptionOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input) => {
+    const { output } = await prompt(input);
     return output!;
   }
 );

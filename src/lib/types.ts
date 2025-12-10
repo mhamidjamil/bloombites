@@ -30,7 +30,12 @@ export type Bouquet = {
 export type CustomItem = {
   id: string;
   name: string;
-  category: 'chocolates' | 'snacks' | 'dry-fruits' | 'notes-cards' | 'premium-add-ons';
+  category:
+    | 'chocolates'
+    | 'snacks'
+    | 'dry-fruits'
+    | 'notes-cards'
+    | 'premium-add-ons';
   price: number;
   image: string; // URL to image
 };

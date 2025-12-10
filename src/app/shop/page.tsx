@@ -6,15 +6,18 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select';
 
 export default function ShopPage() {
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-bold font-headline text-accent-foreground">Our Collection</h1>
+        <h1 className="text-4xl md:text-5xl font-bold font-headline text-accent-foreground">
+          Our Collection
+        </h1>
         <p className="mt-4 max-w-2xl mx-auto text-muted-foreground">
-          Browse our curated selection of snack bouquets, each one crafted with care and creativity.
+          Browse our curated selection of snack bouquets, each one crafted with
+          care and creativity.
         </p>
       </div>
 

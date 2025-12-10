@@ -41,7 +41,8 @@ export function useUser() {
                 setUser({
                   ...firebaseUser,
                   ...data,
-                  role: (data.role as 'admin' | 'customer') || token.claims.role,
+                  role:
+                    (data.role as 'admin' | 'customer') || token.claims.role,
                 });
               } else {
                 setUser({
