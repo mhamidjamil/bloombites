@@ -35,6 +35,7 @@ export default function Home() {
   const [content, setContent] = useState<LandingPageData | null>(null);
   const [products, setProducts] = useState<Bouquet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -73,6 +74,26 @@ export default function Home() {
     };
   }, []);
 
+  // Resolve Hero Images
+  let displayHeroImages: string[] = [];
+  if (content?.hero?.imageUrls && content.hero.imageUrls.length > 0) {
+    displayHeroImages = content.hero.imageUrls;
+  } else if (content?.hero?.imageUrl) {
+    displayHeroImages = [content.hero.imageUrl];
+  } else {
+    const defaultHero = placeholderImages.find((p) => p.id === 'hero-bouquet');
+    displayHeroImages = [defaultHero?.imageUrl || '/placeholder.jpg'];
+  }
+
+  // Hero Slideshow Logic
+  useEffect(() => {
+    if (displayHeroImages.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % displayHeroImages.length);
+    }, 5000); // Change every 5 seconds
+    return () => clearInterval(interval);
+  }, [displayHeroImages.length]);
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -87,28 +108,6 @@ export default function Home() {
   const heroSubtitle =
     content?.hero?.subtitle ||
     'Surprise your loved ones with our handcrafted snack bouquets. The perfect blend of elegance and flavor for every occasion.';
-
-  // Resolve Hero Images
-  let displayHeroImages: string[] = [];
-  if (content?.hero?.imageUrls && content.hero.imageUrls.length > 0) {
-    displayHeroImages = content.hero.imageUrls;
-  } else if (content?.hero?.imageUrl) {
-    displayHeroImages = [content.hero.imageUrl];
-  } else {
-    const defaultHero = placeholderImages.find((p) => p.id === 'hero-bouquet');
-    displayHeroImages = [defaultHero?.imageUrl || '/placeholder.jpg'];
-  }
-
-  // Hero Slideshow Logic
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  useEffect(() => {
-    if (displayHeroImages.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % displayHeroImages.length);
-    }, 5000); // Change every 5 seconds
-    return () => clearInterval(interval);
-  }, [displayHeroImages.length]);
 
   const featured = products.filter((p) => p.isFeatured);
   const displayFeatured =
