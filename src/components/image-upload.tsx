@@ -85,35 +85,24 @@ export default function ImageUpload({
         fileType: 'image/jpeg',
       });
 
-      // 3. Get Presigned URL
-      const filename = `upload-${Date.now()}.jpg`;
-      const res = await fetch('/api/upload', {
+      // 3. Create FormData and upload directly to local API
+      const formData = new FormData();
+      formData.append('file', compressedFile, 'image.jpg');
+
+      const response = await fetch('/api/items/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename, contentType: 'image/jpeg' }),
+        body: formData,
       });
 
-      if (!res.ok) {
-        throw new Error('Failed to get upload URL');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload image');
       }
 
-      const { uploadUrl, publicUrl } = await res.json();
+      const { url } = await response.json();
 
-      // 4. Upload to R2
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: compressedFile,
-        headers: {
-          'Content-Type': 'image/jpeg',
-        },
-      });
-
-      if (!uploadRes.ok) {
-        throw new Error('Failed to upload image to storage');
-      }
-
-      // 5. Complete
-      onUploadComplete(publicUrl);
+      // 4. Complete
+      onUploadComplete(url);
       setIsOpen(false);
       setImageSrc(null);
       toast({
