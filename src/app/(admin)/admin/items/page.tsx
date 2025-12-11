@@ -39,7 +39,7 @@ import {
   addSiteImage,
   getCategories,
 } from '@/lib/db-service';
-import type { CustomItem, Category } from '@/lib/types';
+import type { CustomItem, Category, ItemVariant } from '@/lib/types';
 
 export default function AdminItemsPage() {
   const [items, setItems] = useState<CustomItem[]>([]);
@@ -52,9 +52,10 @@ export default function AdminItemsPage() {
 
   const [formData, setFormData] = useState<Partial<CustomItem>>({
     name: '',
-    price: 0,
+    price: undefined,
     category: '',
-    image: '',
+    images: [],
+    variants: [],
   });
 
   const loadData = useCallback(async () => {
@@ -83,25 +84,63 @@ export default function AdminItemsPage() {
 
   const itemCategories = categories.filter((c) => c.type === 'item');
 
+  const addVariant = () => {
+    const currentVariants = formData.variants || [];
+    setFormData({
+      ...formData,
+      variants: [...currentVariants, { name: '', price: 0 }],
+    });
+  };
+
+  const removeVariant = (index: number) => {
+    const currentVariants = formData.variants || [];
+    setFormData({
+      ...formData,
+      variants: currentVariants.filter((_, i) => i !== index),
+    });
+  };
+
+  const updateVariant = (
+    index: number,
+    field: 'name' | 'price',
+    value: any
+  ) => {
+    const currentVariants = [...(formData.variants || [])];
+    if (currentVariants[index]) {
+      currentVariants[index] = { ...currentVariants[index], [field]: value };
+      setFormData({ ...formData, variants: currentVariants });
+    }
+  };
+
   const openNewDialog = () => {
     setEditingItem(null);
     setFormData({
       name: '',
-      price: 0,
+      price: undefined,
       category: itemCategories[0]?.slug || 'chocolates',
-      image: '',
+      images: [],
+      variants: [],
     });
     setIsDialogOpen(true);
   };
 
   const openEditDialog = (item: CustomItem) => {
     setEditingItem(item);
-    setFormData({ ...item });
+    // Handle backward compatibility: convert single image to images array if needed
+    const itemData = { ...item };
+    if (itemData.image && !itemData.images) {
+      itemData.images = [itemData.image];
+      delete itemData.image;
+    }
+    if (!itemData.images) {
+      itemData.images = [];
+    }
+    setFormData(itemData);
     setIsDialogOpen(true);
   };
 
   const handleSave = async () => {
-    if (!formData.name || !formData.price) {
+    if (!formData.name || formData.price === undefined || formData.price === null) {
       toast({
         variant: 'destructive',
         title: 'Validation Error',
@@ -193,9 +232,9 @@ export default function AdminItemsPage() {
                 <TableRow key={item.id}>
                   <TableCell>
                     <div className="w-10 h-10 relative bg-muted rounded overflow-hidden">
-                      {item.image ? (
+                      {((item.images && item.images.length > 0) || item.image) ? (
                         <img
-                          src={item.image}
+                          src={(item.images && item.images[0]) || item.image}
                           alt={item.name}
                           className="w-full h-full object-cover"
                         />
@@ -261,12 +300,84 @@ export default function AdminItemsPage() {
                 <Label>Price (PKR)</Label>
                 <Input
                   type="number"
-                  value={formData.price}
-                  onChange={(e) =>
-                    setFormData({ ...formData, price: Number(e.target.value) })
-                  }
+                  value={formData.price || ''}
+                  onFocus={(e) => {
+                    if (e.target.value === '0') {
+                      setFormData({ ...formData, price: undefined });
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (!e.target.value) {
+                      setFormData({ ...formData, price: 0 });
+                    }
+                  }}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, price: value ? Number(value) : 0 });
+                  }}
                 />
               </div>
+            </div>
+            
+            <div className="space-y-4 border rounded-md p-4">
+              <div className="flex justify-between items-center">
+                <Label>Variants (Optional)</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addVariant}
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Variant
+                </Button>
+              </div>
+              
+              {formData.variants && formData.variants.length > 0 ? (
+                <div className="space-y-3">
+                  {formData.variants.map((variant, index) => (
+                    <div key={index} className="flex gap-2 items-end">
+                      <div className="flex-1 space-y-1">
+                        <Label className="text-xs">Variant Name</Label>
+                        <Input
+                          value={variant.name}
+                          placeholder="e.g. Small (50g)"
+                          onChange={(e) =>
+                            updateVariant(index, 'name', e.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="w-24 space-y-1">
+                        <Label className="text-xs">Price</Label>
+                        <Input
+                          type="number"
+                          value={variant.price}
+                          onChange={(e) =>
+                            updateVariant(
+                              index,
+                              'price',
+                              Number(e.target.value)
+                            )
+                          }
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive mb-0.5"
+                        onClick={() => removeVariant(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground text-center py-2">
+                  No variants added. The main price above will be used.
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Category</Label>
@@ -294,35 +405,56 @@ export default function AdminItemsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Image</Label>
-              <div className="flex gap-4 items-start border p-4 rounded-md">
-                {formData.image ? (
-                  <div className="relative w-20 h-20 rounded overflow-hidden flex-shrink-0">
-                    <img
-                      src={formData.image}
-                      className="w-full h-full object-cover"
+              <Label>Images (Max 5)</Label>
+              <div className="border p-4 rounded-md">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
+                  {(formData.images || []).map((imageUrl, index) => (
+                    <div key={index} className="relative w-20 h-20 rounded overflow-hidden flex-shrink-0">
+                      <img
+                        src={imageUrl}
+                        className="w-full h-full object-cover"
+                        alt={`Image ${index + 1}`}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-0 right-0 h-5 w-5 bg-white/50 p-0"
+                        onClick={() => {
+                          const currentImages = formData.images || [];
+                          setFormData({
+                            ...formData,
+                            images: currentImages.filter((_, i) => i !== index)
+                          });
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                  {(formData.images || []).length < 5 && (
+                    <div className="w-20 h-20 bg-muted rounded flex items-center justify-center text-xs border-2 border-dashed border-muted-foreground/25">
+                      Add Image
+                    </div>
+                  )}
+                </div>
+                {(formData.images || []).length < 5 && (
+                  <div className="w-full">
+                    <ImagePicker
+                      onImageSelected={(url) => {
+                        const currentImages = formData.images || [];
+                        setFormData({
+                          ...formData,
+                          images: [...currentImages, url]
+                        });
+                      }}
                     />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-0 right-0 h-5 w-5 bg-white/50 p-0"
-                      onClick={() => setFormData({ ...formData, image: '' })}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="w-20 h-20 bg-muted rounded flex items-center justify-center text-xs">
-                    No Img
                   </div>
                 )}
-                <div className="flex-1 w-full min-w-0">
-                  <ImagePicker
-                    onImageSelected={(url) =>
-                      setFormData({ ...formData, image: url })
-                    }
-                  />
-                </div>
+                {(formData.images || []).length >= 5 && (
+                  <p className="text-xs text-muted-foreground">
+                    Maximum of 5 images reached. Delete an image to add a new one.
+                  </p>
+                )}
               </div>
             </div>
           </div>

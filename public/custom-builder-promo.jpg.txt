@@ -1,0 +1,13 @@
+This is a placeholder for your custom bouquet builder promo image.
+
+To set up your custom builder section image:
+
+1. Replace this file with your actual promo image
+2. Name it 'custom-builder-promo.jpg'
+3. Recommended image specifications:
+   - Format: JPG, PNG, or WebP
+   - Size: At least 800x600px
+   - Aspect ratio: 4:3 or similar
+   - File size: Under 1MB for optimal loading
+
+This image appears in the "Build Your Own" section of your landing page.

@@ -34,12 +34,19 @@ export type Bouquet = {
 };
 
 // Item for custom bouquet builder
+export type ItemVariant = {
+  name: string;
+  price: number;
+};
+
 export type CustomItem = {
   id: string;
   name: string;
   category: string;
   price: number;
-  image: string; // URL to image
+  image?: string; // Primary image (for backward compatibility)
+  images?: string[]; // Multiple images (new)
+  variants?: ItemVariant[];
 };
 
 export type CartItem = {
