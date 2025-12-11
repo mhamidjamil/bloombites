@@ -29,6 +29,12 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import ImagePicker from '@/components/image-picker';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -140,7 +146,11 @@ export default function AdminItemsPage() {
   };
 
   const handleSave = async () => {
-    if (!formData.name || formData.price === undefined || formData.price === null) {
+    if (
+      !formData.name ||
+      formData.price === undefined ||
+      formData.price === null
+    ) {
       toast({
         variant: 'destructive',
         title: 'Validation Error',
@@ -214,6 +224,7 @@ export default function AdminItemsPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Price (PKR)</TableHead>
+                <TableHead>Variations</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -221,7 +232,7 @@ export default function AdminItemsPage() {
               {items.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="text-center py-10 text-muted-foreground"
                   >
                     No items found.
@@ -232,7 +243,7 @@ export default function AdminItemsPage() {
                 <TableRow key={item.id}>
                   <TableCell>
                     <div className="w-10 h-10 relative bg-muted rounded overflow-hidden">
-                      {((item.images && item.images.length > 0) || item.image) ? (
+                      {(item.images && item.images.length > 0) || item.image ? (
                         <img
                           src={(item.images && item.images[0]) || item.image}
                           alt={item.name}
@@ -251,6 +262,36 @@ export default function AdminItemsPage() {
                       item.category}
                   </TableCell>
                   <TableCell>{item.price.toLocaleString()}</TableCell>
+                  <TableCell>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help font-medium">
+                            {item.variants?.length || 0}
+                          </span>
+                        </TooltipTrigger>
+                        {item.variants && item.variants.length > 0 && (
+                          <TooltipContent className="max-w-xs">
+                            <div className="space-y-1">
+                              <p className="font-medium text-xs mb-2">
+                                Variations:
+                              </p>
+                              {item.variants.map((variant, index) => (
+                                <div key={index} className="text-xs">
+                                  <span className="font-medium">
+                                    {variant.name}
+                                  </span>
+                                  <span className="text-muted-foreground ml-2">
+                                    PKR {variant.price.toLocaleString()}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
@@ -276,8 +317,8 @@ export default function AdminItemsPage() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>
               {editingItem ? 'Edit Item' : 'Create Item'}
             </DialogTitle>
@@ -285,180 +326,193 @@ export default function AdminItemsPage() {
               Add a snack or decoration for the custom builder.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="flex-1 overflow-y-auto px-2 py-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Name</Label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Price (PKR)</Label>
+                  <Input
+                    type="number"
+                    value={formData.price || ''}
+                    onFocus={(e) => {
+                      if (e.target.value === '0') {
+                        setFormData({ ...formData, price: undefined });
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!e.target.value) {
+                        setFormData({ ...formData, price: 0 });
+                      }
+                    }}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({
+                        ...formData,
+                        price: value ? Number(value) : 0,
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label>Name</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
+                <Label>Category</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(val: any) =>
+                    setFormData({ ...formData, category: val })
                   }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Price (PKR)</Label>
-                <Input
-                  type="number"
-                  value={formData.price || ''}
-                  onFocus={(e) => {
-                    if (e.target.value === '0') {
-                      setFormData({ ...formData, price: undefined });
-                    }
-                  }}
-                  onBlur={(e) => {
-                    if (!e.target.value) {
-                      setFormData({ ...formData, price: 0 });
-                    }
-                  }}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setFormData({ ...formData, price: value ? Number(value) : 0 });
-                  }}
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-4 border rounded-md p-4">
-              <div className="flex justify-between items-center">
-                <Label>Variants (Optional)</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addVariant}
                 >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Variant
-                </Button>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {itemCategories.length === 0 && (
+                      <SelectItem value="chocolates">
+                        Chocolates (Default)
+                      </SelectItem>
+                    )}
+                    {itemCategories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.slug}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              
-              {formData.variants && formData.variants.length > 0 ? (
-                <div className="space-y-3">
-                  {formData.variants.map((variant, index) => (
-                    <div key={index} className="flex gap-2 items-end">
-                      <div className="flex-1 space-y-1">
-                        <Label className="text-xs">Variant Name</Label>
-                        <Input
-                          value={variant.name}
-                          placeholder="e.g. Small (50g)"
-                          onChange={(e) =>
-                            updateVariant(index, 'name', e.target.value)
-                          }
-                        />
+
+              <div className="space-y-4 border rounded-md p-4">
+                <div className="flex justify-between items-center">
+                  <Label>Variants (Optional)</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addVariant}
+                  >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Variant
+                  </Button>
+                </div>
+
+                {formData.variants && formData.variants.length > 0 ? (
+                  <div className="space-y-3">
+                    {formData.variants.map((variant, index) => (
+                      <div key={index} className="flex gap-2 items-end">
+                        <div className="flex-1 space-y-1">
+                          <Label className="text-xs">Variant Name</Label>
+                          <Input
+                            value={variant.name}
+                            placeholder="e.g. Small (50g)"
+                            onChange={(e) =>
+                              updateVariant(index, 'name', e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="w-24 space-y-1">
+                          <Label className="text-xs">Price</Label>
+                          <Input
+                            type="number"
+                            value={variant.price}
+                            onChange={(e) =>
+                              updateVariant(
+                                index,
+                                'price',
+                                Number(e.target.value)
+                              )
+                            }
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive mb-0.5"
+                          onClick={() => removeVariant(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <div className="w-24 space-y-1">
-                        <Label className="text-xs">Price</Label>
-                        <Input
-                          type="number"
-                          value={variant.price}
-                          onChange={(e) =>
-                            updateVariant(
-                              index,
-                              'price',
-                              Number(e.target.value)
-                            )
-                          }
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive mb-0.5"
-                        onClick={() => removeVariant(index)}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground text-center py-2">
+                    No variants added. The main price above will be used.
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Images (Max 5)</Label>
+                <div className="border p-4 rounded-md">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
+                    {(formData.images || []).map((imageUrl, index) => (
+                      <div
+                        key={index}
+                        className="relative w-20 h-20 rounded overflow-hidden flex-shrink-0"
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground text-center py-2">
-                  No variants added. The main price above will be used.
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(val: any) =>
-                  setFormData({ ...formData, category: val })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {itemCategories.length === 0 && (
-                    <SelectItem value="chocolates">
-                      Chocolates (Default)
-                    </SelectItem>
-                  )}
-                  {itemCategories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.slug}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Images (Max 5)</Label>
-              <div className="border p-4 rounded-md">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
-                  {(formData.images || []).map((imageUrl, index) => (
-                    <div key={index} className="relative w-20 h-20 rounded overflow-hidden flex-shrink-0">
-                      <img
-                        src={imageUrl}
-                        className="w-full h-full object-cover"
-                        alt={`Image ${index + 1}`}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-0 right-0 h-5 w-5 bg-white/50 p-0"
-                        onClick={() => {
+                        <img
+                          src={imageUrl}
+                          className="w-full h-full object-cover"
+                          alt={`Image ${index + 1}`}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-0 right-0 h-5 w-5 bg-white/50 p-0"
+                          onClick={() => {
+                            const currentImages = formData.images || [];
+                            setFormData({
+                              ...formData,
+                              images: currentImages.filter(
+                                (_, i) => i !== index
+                              ),
+                            });
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                    {(formData.images || []).length < 5 && (
+                      <div className="w-20 h-20 bg-muted rounded flex items-center justify-center text-xs border-2 border-dashed border-muted-foreground/25">
+                        Add Image
+                      </div>
+                    )}
+                  </div>
+                  {(formData.images || []).length < 5 && (
+                    <div className="w-full">
+                      <ImagePicker
+                        onImageSelected={(url) => {
                           const currentImages = formData.images || [];
                           setFormData({
                             ...formData,
-                            images: currentImages.filter((_, i) => i !== index)
+                            images: [...currentImages, url],
                           });
                         }}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                  {(formData.images || []).length < 5 && (
-                    <div className="w-20 h-20 bg-muted rounded flex items-center justify-center text-xs border-2 border-dashed border-muted-foreground/25">
-                      Add Image
+                      />
                     </div>
                   )}
+                  {(formData.images || []).length >= 5 && (
+                    <p className="text-xs text-muted-foreground">
+                      Maximum of 5 images reached. Delete an image to add a new
+                      one.
+                    </p>
+                  )}
                 </div>
-                {(formData.images || []).length < 5 && (
-                  <div className="w-full">
-                    <ImagePicker
-                      onImageSelected={(url) => {
-                        const currentImages = formData.images || [];
-                        setFormData({
-                          ...formData,
-                          images: [...currentImages, url]
-                        });
-                      }}
-                    />
-                  </div>
-                )}
-                {(formData.images || []).length >= 5 && (
-                  <p className="text-xs text-muted-foreground">
-                    Maximum of 5 images reached. Delete an image to add a new one.
-                  </p>
-                )}
               </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button onClick={handleSave} disabled={isSaving}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Item

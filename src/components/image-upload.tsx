@@ -35,7 +35,9 @@ export default function ImageUpload({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [cropMode, setCropMode] = useState<'free' | 'square' | 'landscape' | 'portrait'>('free');
+  const [cropMode, setCropMode] = useState<
+    'free' | 'square' | 'landscape' | 'portrait'
+  >('free');
   const [skipCropping, setSkipCropping] = useState(false);
   const { toast } = useToast();
 
@@ -189,37 +191,37 @@ export default function ImageUpload({
           {/* Crop Mode Selection */}
           <div className="flex flex-wrap gap-2 mb-4">
             <Button
-              variant={skipCropping ? "default" : "outline"}
+              variant={skipCropping ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSkipCropping(!skipCropping)}
             >
-              {skipCropping ? "✓ Upload Full Image" : "Upload Full Image"}
+              {skipCropping ? '✓ Upload Full Image' : 'Upload Full Image'}
             </Button>
             {!skipCropping && (
               <>
                 <Button
-                  variant={cropMode === 'free' ? "default" : "outline"}
+                  variant={cropMode === 'free' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setCropMode('free')}
                 >
                   Free Crop
                 </Button>
                 <Button
-                  variant={cropMode === 'square' ? "default" : "outline"}
+                  variant={cropMode === 'square' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setCropMode('square')}
                 >
                   Square (1:1)
                 </Button>
                 <Button
-                  variant={cropMode === 'landscape' ? "default" : "outline"}
+                  variant={cropMode === 'landscape' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setCropMode('landscape')}
                 >
                   Landscape (16:9)
                 </Button>
                 <Button
-                  variant={cropMode === 'portrait' ? "default" : "outline"}
+                  variant={cropMode === 'portrait' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setCropMode('portrait')}
                 >
@@ -236,10 +238,13 @@ export default function ImageUpload({
                 crop={crop}
                 zoom={zoom}
                 aspect={
-                  cropMode === 'square' ? 1 :
-                  cropMode === 'landscape' ? 16 / 9 :
-                  cropMode === 'portrait' ? 3 / 4 :
-                  undefined // free crop
+                  cropMode === 'square'
+                    ? 1
+                    : cropMode === 'landscape'
+                      ? 16 / 9
+                      : cropMode === 'portrait'
+                        ? 3 / 4
+                        : undefined // free crop
                 }
                 onCropChange={setCrop}
                 onCropComplete={onCropComplete}
@@ -249,8 +254,12 @@ export default function ImageUpload({
             {imageSrc && skipCropping && (
               <div className="w-full h-full flex items-center justify-center">
                 <div className="text-center text-white">
-                  <div className="text-lg font-semibold mb-2">Full Image Upload</div>
-                  <div className="text-sm opacity-75">The entire image will be uploaded without cropping</div>
+                  <div className="text-lg font-semibold mb-2">
+                    Full Image Upload
+                  </div>
+                  <div className="text-sm opacity-75">
+                    The entire image will be uploaded without cropping
+                  </div>
                 </div>
               </div>
             )}
