@@ -52,7 +52,7 @@ export default function AdminItemsPage() {
 
   const [formData, setFormData] = useState<Partial<CustomItem>>({
     name: '',
-    price: 0,
+    price: undefined,
     category: '',
     image: '',
   });
@@ -87,7 +87,7 @@ export default function AdminItemsPage() {
     setEditingItem(null);
     setFormData({
       name: '',
-      price: 0,
+      price: undefined,
       category: itemCategories[0]?.slug || 'chocolates',
       image: '',
     });
@@ -101,7 +101,7 @@ export default function AdminItemsPage() {
   };
 
   const handleSave = async () => {
-    if (!formData.name || !formData.price) {
+    if (!formData.name || formData.price === undefined || formData.price === null) {
       toast({
         variant: 'destructive',
         title: 'Validation Error',
@@ -261,10 +261,21 @@ export default function AdminItemsPage() {
                 <Label>Price (PKR)</Label>
                 <Input
                   type="number"
-                  value={formData.price}
-                  onChange={(e) =>
-                    setFormData({ ...formData, price: Number(e.target.value) })
-                  }
+                  value={formData.price || ''}
+                  onFocus={(e) => {
+                    if (e.target.value === '0') {
+                      setFormData({ ...formData, price: undefined });
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (!e.target.value) {
+                      setFormData({ ...formData, price: 0 });
+                    }
+                  }}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, price: value ? Number(value) : 0 });
+                  }}
                 />
               </div>
             </div>
