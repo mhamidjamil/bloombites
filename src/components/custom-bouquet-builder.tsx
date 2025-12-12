@@ -31,7 +31,7 @@ import { Textarea } from './ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { generateBouquetDescription } from '@/ai/flows/generate-bouquet-description';
 import { Skeleton } from './ui/skeleton';
-import { getCategories, getCustomItems } from '@/lib/db-service';
+import { getCategories, getCustomItems, getBouquetStyles } from '@/lib/db-service';
 
 type SelectedBouquetItem = {
   id: string; // Unique identifier for each selected item instance
@@ -46,6 +46,7 @@ type BouquetStyle = {
   description: string;
   image?: string;
   price: number;
+  isEnabled?: boolean;
 };
 
 export default function CustomBouquetBuilder() {
@@ -69,41 +70,14 @@ export default function CustomBouquetBuilder() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [fetchedCategories, fetchedItems] = await Promise.all([
+        const [fetchedCategories, fetchedItems, fetchedStyles] = await Promise.all([
           getCategories(),
           getCustomItems(),
+          getBouquetStyles(),
         ]);
         setCategories(fetchedCategories);
         setItems(fetchedItems);
-
-        // Mock bouquet styles - in a real app, these would come from the database
-        const mockStyles: BouquetStyle[] = [
-          {
-            id: 'classic',
-            name: 'Classic Gift Box',
-            description: 'Elegant white gift box with ribbon',
-            price: 200,
-          },
-          {
-            id: 'premium',
-            name: 'Premium Basket',
-            description: 'Beautiful woven basket with decorative wrapping',
-            price: 350,
-          },
-          {
-            id: 'luxury',
-            name: 'Luxury Presentation',
-            description: 'Crystal vase arrangement with premium packaging',
-            price: 500,
-          },
-          {
-            id: 'eco',
-            name: 'Eco-Friendly Wrap',
-            description: 'Sustainable packaging with natural materials',
-            price: 150,
-          },
-        ];
-        setBouquetStyles(mockStyles);
+        setBouquetStyles(fetchedStyles);
       } catch (error) {
         console.error('Failed to load data:', error);
         toast({
@@ -586,7 +560,7 @@ export default function CustomBouquetBuilder() {
           ) : (
             // Style Selection Stage
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {bouquetStyles.map((style) => (
+              {bouquetStyles.filter(style => style.isEnabled !== false).map((style) => (
                 <Card
                   key={style.id}
                   onClick={() => setSelectedStyle(style)}
