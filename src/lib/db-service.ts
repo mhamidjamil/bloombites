@@ -55,7 +55,7 @@ export interface SiteImage {
   uploadedAt: number;
 }
 
-import { Bouquet, CustomItem, Category } from './types';
+import { Bouquet, CustomItem, Category, BouquetStyle } from './types';
 
 export const getSiteImages = async (): Promise<SiteImage[]> => {
   const colRef = collection(firestore, 'site_images');
@@ -142,5 +142,33 @@ export const updateCustomItem = async (
 
 export const deleteCustomItem = async (id: string) => {
   const docRef = doc(firestore, 'custom_items', id);
+  await deleteDoc(docRef);
+};
+
+// --- Bouquet Styles ---
+export const getBouquetStyles = async (): Promise<BouquetStyle[]> => {
+  const colRef = collection(firestore, 'bouquet_styles');
+  const q = query(colRef, orderBy('name'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(
+    (doc) => ({ id: doc.id, ...doc.data() }) as BouquetStyle
+  );
+};
+
+export const addBouquetStyle = async (style: Omit<BouquetStyle, 'id'>) => {
+  const colRef = collection(firestore, 'bouquet_styles');
+  await addDoc(colRef, style);
+};
+
+export const updateBouquetStyle = async (
+  id: string,
+  data: Partial<BouquetStyle>
+) => {
+  const docRef = doc(firestore, 'bouquet_styles', id);
+  await updateDoc(docRef, data);
+};
+
+export const deleteBouquetStyle = async (id: string) => {
+  const docRef = doc(firestore, 'bouquet_styles', id);
   await deleteDoc(docRef);
 };
