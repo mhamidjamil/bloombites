@@ -12,6 +12,7 @@ A modern, AI-powered e-commerce platform for custom snack bouquets. Create perso
 ## 🌟 Features
 
 ### 🛍️ Customer Experience
+
 - **Custom Bouquet Builder**: Interactive tool to create personalized snack bouquets
 - **AI-Powered Descriptions**: Google Gemini AI generates creative names and descriptions
 - **Product Catalog**: Browse pre-made bouquets with high-quality images
@@ -20,6 +21,7 @@ A modern, AI-powered e-commerce platform for custom snack bouquets. Create perso
 - **User Authentication**: Email/password authentication with role-based access
 
 ### 👨‍💼 Admin Dashboard
+
 - **Bouquet Management**: Create, edit, and manage bouquet offerings
 - **Item Management**: Manage snack items with variants and pricing
 - **Order Management**: View and update customer order statuses
@@ -27,6 +29,7 @@ A modern, AI-powered e-commerce platform for custom snack bouquets. Create perso
 - **Analytics**: Monitor sales and customer data
 
 ### 🎨 Design & UX
+
 - **Modern UI**: Clean, responsive design with Tailwind CSS
 - **Elegant Theme**: Gold and chocolate brown color scheme for premium feel
 - **Smooth Animations**: Framer Motion for enhanced user interactions
@@ -35,6 +38,7 @@ A modern, AI-powered e-commerce platform for custom snack bouquets. Create perso
 ## 🛠️ Tech Stack
 
 ### Frontend
+
 - **Next.js 15** - React framework with App Router
 - **React 19** - UI library with concurrent features
 - **TypeScript** - Type-safe development
@@ -43,11 +47,13 @@ A modern, AI-powered e-commerce platform for custom snack bouquets. Create perso
 - **Framer Motion** - Animation library
 
 ### Backend & Infrastructure
+
 - **Firebase** - Authentication, Firestore database, and hosting
 - **Google Cloud Storage** - Image storage and delivery
 - **Google GenAI** - AI-powered content generation
 
 ### Development Tools
+
 - **ESLint** - Code linting
 - **Prettier** - Code formatting
 - **TypeScript** - Type checking
@@ -56,6 +62,7 @@ A modern, AI-powered e-commerce platform for custom snack bouquets. Create perso
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 18+ and npm
 - Firebase project with Firestore enabled
 - Google Cloud project with GenAI API enabled
@@ -63,18 +70,21 @@ A modern, AI-powered e-commerce platform for custom snack bouquets. Create perso
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/mhamidjamil/bloombites.git
    cd bloombites
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Environment Setup**
    Create a `.env.local` file with your Firebase and Google Cloud credentials:
+
    ```env
    # Firebase Configuration
    NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
@@ -105,6 +115,7 @@ A modern, AI-powered e-commerce platform for custom snack bouquets. Create perso
    - Generate an API key
 
 6. **Run the development server**
+
    ```bash
    npm run dev
    ```
@@ -164,20 +175,24 @@ npm run code:fix         # Fix and format code
 ## 🎨 Design System
 
 ### Colors
+
 - **Primary**: Gold (#FFD700) - Premium, celebratory feel
 - **Background**: Light Beige (#F5F5DC) - Warm, neutral backdrop
 - **Accent**: Dark Chocolate Brown (#3E2723) - Luxurious, sophisticated
 
 ### Typography
+
 - **Headlines**: Playfair Display (serif) - Elegant, high-end feel
 - **Body**: PT Sans (sans-serif) - Clean, readable
 
 ### Components
+
 Built with Radix UI primitives and styled with Tailwind CSS for accessibility and consistency.
 
 ## 🤖 AI Features
 
 ### Bouquet Description Generation
+
 - Uses Google Gemini AI to create creative names and descriptions
 - Analyzes selected items and theme to generate marketing copy
 - Integrated into the custom bouquet builder workflow
@@ -199,12 +214,14 @@ Built with Radix UI primitives and styled with Tailwind CSS for accessibility an
 ## 🚀 Deployment
 
 ### Firebase Hosting
+
 ```bash
 npm run build
 firebase deploy
 ```
 
 ### Environment Variables
+
 Ensure all environment variables are set in your deployment environment.
 
 ## 🤝 Contributing
@@ -216,6 +233,7 @@ Ensure all environment variables are set in your deployment environment.
 5. Open a Pull Request
 
 ### Code Standards
+
 - Follow TypeScript best practices
 - Use ESLint and Prettier for code quality
 - Write meaningful commit messages
