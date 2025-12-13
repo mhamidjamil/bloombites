@@ -160,7 +160,7 @@ export default function AdminStylesPage() {
   };
 
   const handleImageUpload = async (url: string) => {
-    setFormData(prev => ({ ...prev, image: url }));
+    setFormData((prev) => ({ ...prev, image: url }));
     toast({
       title: 'Success',
       description: 'Image uploaded successfully.',
@@ -223,11 +223,15 @@ export default function AdminStylesPage() {
                           />
                         ) : (
                           <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
-                            <span className="text-xs text-muted-foreground">No image</span>
+                            <span className="text-xs text-muted-foreground">
+                              No image
+                            </span>
                           </div>
                         )}
                       </TableCell>
-                      <TableCell className="font-medium">{style.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {style.name}
+                      </TableCell>
                       <TableCell className="max-w-xs truncate">
                         {style.description}
                       </TableCell>
@@ -235,12 +239,12 @@ export default function AdminStylesPage() {
                       <TableCell>
                         <span
                           className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            style.isEnabled ?? true
+                            (style.isEnabled ?? true)
                               ? 'bg-green-100 text-green-800'
                               : 'bg-red-100 text-red-800'
                           }`}
                         >
-                          {style.isEnabled ?? true ? 'Enabled' : 'Disabled'}
+                          {(style.isEnabled ?? true) ? 'Enabled' : 'Disabled'}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -300,7 +304,7 @@ export default function AdminStylesPage() {
                     id="name"
                     value={formData.name}
                     onChange={(e) =>
-                      setFormData(prev => ({ ...prev, name: e.target.value }))
+                      setFormData((prev) => ({ ...prev, name: e.target.value }))
                     }
                     placeholder="e.g., Classic Gift Box"
                     required
@@ -313,7 +317,10 @@ export default function AdminStylesPage() {
                     id="description"
                     value={formData.description}
                     onChange={(e) =>
-                      setFormData(prev => ({ ...prev, description: e.target.value }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
                     }
                     placeholder="Describe the presentation style..."
                     required
@@ -329,7 +336,10 @@ export default function AdminStylesPage() {
                     step="0.01"
                     value={formData.price}
                     onChange={(e) =>
-                      setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        price: parseFloat(e.target.value) || 0,
+                      }))
                     }
                     placeholder="0.00"
                     required
@@ -349,7 +359,9 @@ export default function AdminStylesPage() {
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
+                        onClick={() =>
+                          setFormData((prev) => ({ ...prev, image: '' }))
+                        }
                       >
                         Remove
                       </Button>
@@ -357,7 +369,7 @@ export default function AdminStylesPage() {
                   ) : (
                     <ImagePicker
                       onImageSelected={(url) =>
-                        setFormData(prev => ({ ...prev, image: url }))
+                        setFormData((prev) => ({ ...prev, image: url }))
                       }
                     />
                   )}
@@ -368,7 +380,7 @@ export default function AdminStylesPage() {
                     id="isEnabled"
                     checked={formData.isEnabled}
                     onCheckedChange={(checked) =>
-                      setFormData(prev => ({ ...prev, isEnabled: checked }))
+                      setFormData((prev) => ({ ...prev, isEnabled: checked }))
                     }
                   />
                   <Label htmlFor="isEnabled">Enabled</Label>
@@ -385,7 +397,9 @@ export default function AdminStylesPage() {
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {isSubmitting && (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  )}
                   {editingStyle ? 'Update' : 'Add'} Style
                 </Button>
               </DialogFooter>
