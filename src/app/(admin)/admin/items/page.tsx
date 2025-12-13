@@ -317,12 +317,15 @@ export default function AdminItemsPage() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent 
+        <DialogContent
           className="max-w-4xl max-h-[90vh] flex flex-col"
           onInteractOutside={(e) => {
             // Prevent dialog from closing when clicking on toast notifications
             const target = e.target as HTMLElement;
-            if (target.closest('[data-radix-toast-viewport]') || target.closest('[role="status"]')) {
+            if (
+              target.closest('[data-radix-toast-viewport]') ||
+              target.closest('[role="status"]')
+            ) {
               e.preventDefault();
             }
           }}
@@ -503,7 +506,10 @@ export default function AdminItemsPage() {
                                   });
                                 }
                               } catch (error) {
-                                console.warn('Failed to delete image from server:', error);
+                                console.warn(
+                                  'Failed to delete image from server:',
+                                  error
+                                );
                                 // Don't show error to user as the image is already removed from form
                               }
                             }
