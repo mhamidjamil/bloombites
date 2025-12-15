@@ -109,7 +109,10 @@ export default function ImageUpload({
         });
         fileToCompress = compressedFile;
       } catch (compressionError) {
-        console.warn('Image compression failed, uploading original file:', compressionError);
+        console.warn(
+          'Image compression failed, uploading original file:',
+          compressionError
+        );
         // Continue with original file if compression fails
       }
 
