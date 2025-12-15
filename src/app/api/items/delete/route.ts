@@ -7,11 +7,18 @@ export async function POST(request: NextRequest) {
     const { filename } = await request.json();
 
     if (!filename) {
-      return NextResponse.json({ error: 'Filename is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Filename is required' },
+        { status: 400 }
+      );
     }
 
     // Validate filename to prevent directory traversal
-    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    if (
+      filename.includes('..') ||
+      filename.includes('/') ||
+      filename.includes('\\')
+    ) {
       return NextResponse.json({ error: 'Invalid filename' }, { status: 400 });
     }
 
@@ -23,10 +30,16 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       // File doesn't exist or can't be deleted
       console.warn('Failed to delete file:', filePath, error);
-      return NextResponse.json({ error: 'File not found or could not be deleted' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'File not found or could not be deleted' },
+        { status: 404 }
+      );
     }
   } catch (error) {
     console.error('Delete image error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
