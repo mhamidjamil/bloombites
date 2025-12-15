@@ -31,7 +31,11 @@ import { Textarea } from './ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { generateBouquetDescription } from '@/ai/flows/generate-bouquet-description';
 import { Skeleton } from './ui/skeleton';
-import { getCategories, getCustomItems, getBouquetStyles } from '@/lib/db-service';
+import {
+  getCategories,
+  getCustomItems,
+  getBouquetStyles,
+} from '@/lib/db-service';
 
 type SelectedBouquetItem = {
   id: string; // Unique identifier for each selected item instance
@@ -70,11 +74,12 @@ export default function CustomBouquetBuilder() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [fetchedCategories, fetchedItems, fetchedStyles] = await Promise.all([
-          getCategories(),
-          getCustomItems(),
-          getBouquetStyles(),
-        ]);
+        const [fetchedCategories, fetchedItems, fetchedStyles] =
+          await Promise.all([
+            getCategories(),
+            getCustomItems(),
+            getBouquetStyles(),
+          ]);
         setCategories(fetchedCategories);
         setItems(fetchedItems);
         setBouquetStyles(fetchedStyles);
@@ -560,32 +565,36 @@ export default function CustomBouquetBuilder() {
           ) : (
             // Style Selection Stage
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {bouquetStyles.filter(style => style.isEnabled !== false).map((style) => (
-                <Card
-                  key={style.id}
-                  onClick={() => setSelectedStyle(style)}
-                  className={`cursor-pointer transition-all ${
-                    selectedStyle?.id === style.id ? 'ring-2 ring-primary' : ''
-                  }`}
-                >
-                  <CardContent className="p-6">
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-muted rounded-full mx-auto mb-4 flex items-center justify-center">
-                        <Sparkles className="w-8 h-8 text-muted-foreground" />
+              {bouquetStyles
+                .filter((style) => style.isEnabled !== false)
+                .map((style) => (
+                  <Card
+                    key={style.id}
+                    onClick={() => setSelectedStyle(style)}
+                    className={`cursor-pointer transition-all ${
+                      selectedStyle?.id === style.id
+                        ? 'ring-2 ring-primary'
+                        : ''
+                    }`}
+                  >
+                    <CardContent className="p-6">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-muted rounded-full mx-auto mb-4 flex items-center justify-center">
+                          <Sparkles className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                        <h3 className="font-semibold text-lg mb-2">
+                          {style.name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          {style.description}
+                        </p>
+                        <p className="text-lg font-bold text-primary">
+                          PKR {style.price}
+                        </p>
                       </div>
-                      <h3 className="font-semibold text-lg mb-2">
-                        {style.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        {style.description}
-                      </p>
-                      <p className="text-lg font-bold text-primary">
-                        PKR {style.price}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))}
             </div>
           )}
 
