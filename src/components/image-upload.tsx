@@ -38,7 +38,7 @@ export default function ImageUpload({
   const [cropMode, setCropMode] = useState<
     'free' | 'square' | 'landscape' | 'portrait'
   >('free');
-  const [skipCropping, setSkipCropping] = useState(false);
+  const [skipCropping, setSkipCropping] = useState(true);
   const { toast } = useToast();
 
   const onCropComplete = useCallback(
@@ -98,17 +98,24 @@ export default function ImageUpload({
         fileToUpload = croppedBlob as File;
       }
 
-      // 2. Compress image
-      const compressedFile = await imageCompression(fileToUpload, {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-        fileType: 'image/jpeg',
-      });
+      // 2. Try to compress image (optional)
+      let fileToCompress = fileToUpload;
+      try {
+        const compressedFile = await imageCompression(fileToUpload, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+          fileType: 'image/jpeg',
+        });
+        fileToCompress = compressedFile;
+      } catch (compressionError) {
+        console.warn('Image compression failed, uploading original file:', compressionError);
+        // Continue with original file if compression fails
+      }
 
       // 3. Create FormData and upload directly to local API
       const formData = new FormData();
-      formData.append('file', compressedFile, 'image.jpg');
+      formData.append('file', fileToCompress, 'image.jpg');
 
       const response = await fetch('/api/items/upload', {
         method: 'POST',

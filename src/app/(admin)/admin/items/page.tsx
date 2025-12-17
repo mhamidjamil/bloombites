@@ -483,11 +483,6 @@ export default function AdminItemsPage() {
                         </Button>
                       </div>
                     ))}
-                    {(formData.images || []).length < 5 && (
-                      <div className="w-20 h-20 bg-muted rounded flex items-center justify-center text-xs border-2 border-dashed border-muted-foreground/25">
-                        Add Image
-                      </div>
-                    )}
                   </div>
                   {(formData.images || []).length < 5 && (
                     <div className="w-full">
