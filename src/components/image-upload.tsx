@@ -15,17 +15,18 @@ import { Slider } from '@/components/ui/slider';
 import getCroppedImg from '@/lib/image-utils';
 import imageCompression from 'browser-image-compression';
 import { Loader2, Upload, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 
 interface ImageUploadProps {
   onUploadComplete: (url: string) => void;
+  onError?: (error: string) => void;
   className?: string;
   currentImage?: string;
 }
 
 export default function ImageUpload({
   onUploadComplete,
+  onError,
   className,
   currentImage,
 }: ImageUploadProps) {
@@ -39,7 +40,6 @@ export default function ImageUpload({
     'free' | 'square' | 'landscape' | 'portrait'
   >('free');
   const [skipCropping, setSkipCropping] = useState(true);
-  const { toast } = useToast();
 
   const onCropComplete = useCallback(
     (_croppedArea: Area, croppedAreaPixels: Area) => {
@@ -133,17 +133,12 @@ export default function ImageUpload({
       onUploadComplete(url);
       setIsOpen(false);
       setImageSrc(null);
-      toast({
-        title: 'Success',
-        description: 'Image uploaded successfully',
-      });
+      // Removed toast here to prevent dialog interference
     } catch (error: any) {
       console.error(error);
-      toast({
-        variant: 'destructive',
-        title: 'Upload Failed',
-        description: error.message || 'Something went wrong',
-      });
+      if (onError) {
+        onError(error.message || 'Something went wrong');
+      }
     } finally {
       setIsUploading(false);
     }
