@@ -317,7 +317,16 @@ export default function AdminItemsPage() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogContent 
+          className="max-w-4xl max-h-[90vh] flex flex-col"
+          onInteractOutside={(e) => {
+            // Prevent dialog from closing when clicking on toast notifications
+            const target = e.target as HTMLElement;
+            if (target.closest('[data-radix-toast-viewport]') || target.closest('[role="status"]')) {
+              e.preventDefault();
+            }
+          }}
+        >
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>
               {editingItem ? 'Edit Item' : 'Create Item'}
@@ -469,25 +478,41 @@ export default function AdminItemsPage() {
                           variant="ghost"
                           size="icon"
                           className="absolute top-0 right-0 h-5 w-5 bg-white/50 p-0"
-                          onClick={() => {
+                          onClick={async () => {
                             const currentImages = formData.images || [];
+                            const imageToRemove = currentImages[index];
+                            const updatedImages = currentImages.filter(
+                              (_, i) => i !== index
+                            );
                             setFormData({
                               ...formData,
-                              images: currentImages.filter(
-                                (_, i) => i !== index
-                              ),
+                              images: updatedImages,
                             });
+
+                            // Delete the image from server
+                            if (imageToRemove) {
+                              try {
+                                const filename = imageToRemove.split('/').pop();
+                                if (filename) {
+                                  await fetch('/api/items/delete', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ filename }),
+                                  });
+                                }
+                              } catch (error) {
+                                console.warn('Failed to delete image from server:', error);
+                                // Don't show error to user as the image is already removed from form
+                              }
+                            }
                           }}
                         >
                           <X className="h-3 w-3" />
                         </Button>
                       </div>
                     ))}
-                    {(formData.images || []).length < 5 && (
-                      <div className="w-20 h-20 bg-muted rounded flex items-center justify-center text-xs border-2 border-dashed border-muted-foreground/25">
-                        Add Image
-                      </div>
-                    )}
                   </div>
                   {(formData.images || []).length < 5 && (
                     <div className="w-full">
@@ -497,6 +522,20 @@ export default function AdminItemsPage() {
                           setFormData({
                             ...formData,
                             images: [...currentImages, url],
+                          });
+                          // Show toast after a short delay to prevent dialog interference
+                          setTimeout(() => {
+                            toast({
+                              title: 'Success',
+                              description: 'Image uploaded successfully',
+                            });
+                          }, 100);
+                        }}
+                        onError={(error) => {
+                          toast({
+                            variant: 'destructive',
+                            title: 'Upload Failed',
+                            description: error,
                           });
                         }}
                       />

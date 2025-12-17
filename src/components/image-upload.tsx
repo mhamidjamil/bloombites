@@ -15,17 +15,18 @@ import { Slider } from '@/components/ui/slider';
 import getCroppedImg from '@/lib/image-utils';
 import imageCompression from 'browser-image-compression';
 import { Loader2, Upload, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 
 interface ImageUploadProps {
   onUploadComplete: (url: string) => void;
+  onError?: (error: string) => void;
   className?: string;
   currentImage?: string;
 }
 
 export default function ImageUpload({
   onUploadComplete,
+  onError,
   className,
   currentImage,
 }: ImageUploadProps) {
@@ -38,8 +39,7 @@ export default function ImageUpload({
   const [cropMode, setCropMode] = useState<
     'free' | 'square' | 'landscape' | 'portrait'
   >('free');
-  const [skipCropping, setSkipCropping] = useState(false);
-  const { toast } = useToast();
+  const [skipCropping, setSkipCropping] = useState(true);
 
   const onCropComplete = useCallback(
     (_croppedArea: Area, croppedAreaPixels: Area) => {
@@ -98,17 +98,24 @@ export default function ImageUpload({
         fileToUpload = croppedBlob as File;
       }
 
-      // 2. Compress image
-      const compressedFile = await imageCompression(fileToUpload, {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-        fileType: 'image/jpeg',
-      });
+      // 2. Try to compress image (optional)
+      let fileToCompress = fileToUpload;
+      try {
+        const compressedFile = await imageCompression(fileToUpload, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+          fileType: 'image/jpeg',
+        });
+        fileToCompress = compressedFile;
+      } catch (compressionError) {
+        console.warn('Image compression failed, uploading original file:', compressionError);
+        // Continue with original file if compression fails
+      }
 
       // 3. Create FormData and upload directly to local API
       const formData = new FormData();
-      formData.append('file', compressedFile, 'image.jpg');
+      formData.append('file', fileToCompress, 'image.jpg');
 
       const response = await fetch('/api/items/upload', {
         method: 'POST',
@@ -126,17 +133,12 @@ export default function ImageUpload({
       onUploadComplete(url);
       setIsOpen(false);
       setImageSrc(null);
-      toast({
-        title: 'Success',
-        description: 'Image uploaded successfully',
-      });
+      // Removed toast here to prevent dialog interference
     } catch (error: any) {
       console.error(error);
-      toast({
-        variant: 'destructive',
-        title: 'Upload Failed',
-        description: error.message || 'Something went wrong',
-      });
+      if (onError) {
+        onError(error.message || 'Something went wrong');
+      }
     } finally {
       setIsUploading(false);
     }
