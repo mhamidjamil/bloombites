@@ -48,6 +48,7 @@ import {
   deleteProduct,
   addSiteImage,
   getCategories,
+  slugify,
 } from '@/lib/db-service';
 import type { Bouquet, Category } from '@/lib/types';
 
@@ -55,6 +56,7 @@ export default function AdminBouquetsPage() {
   const [products, setProducts] = useState<Bouquet[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Bouquet | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -73,6 +75,7 @@ export default function AdminBouquetsPage() {
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const [featchedProducts, fetchedCategories] = await Promise.all([
         getBouquets(),
@@ -81,10 +84,18 @@ export default function AdminBouquetsPage() {
       setProducts(featchedProducts);
       setCategories(fetchedCategories);
     } catch (error) {
+      const message = 'Failed to load bouquets.';
+      console.error(
+        JSON.stringify({
+          operation: 'admin.bouquets.loadData',
+          message: error instanceof Error ? error.message : String(error),
+        })
+      );
+      setLoadError(message);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to load data.',
+        description: message,
       });
     } finally {
       setIsLoading(false);
@@ -118,27 +129,34 @@ export default function AdminBouquetsPage() {
     setIsDialogOpen(true);
   };
 
-  // Helper to save image to library history silently if it's new
-  // But ImagePicker handles the "Upload" part. For URL part, we might want to track it.
-  // Actually, let's just use the URL. The library tracking is nice but not strictly required for "Paste URL" feature unless desired.
-  // I will skip explicit library add for "Paste URL" here to keep it simple,
-  // relying on ImagePicker's upload behavior for uploads.
-
   const handleSave = async () => {
-    if (!formData.name || !formData.price) {
+    if (
+      !formData.name?.trim() ||
+      formData.price === undefined ||
+      formData.price === null ||
+      formData.price < 0
+    ) {
       toast({
         variant: 'destructive',
         title: 'Validation Error',
-        description: 'Name and Price are required.',
+        description: 'Name is required and Price must be 0 or more.',
+      });
+      return;
+    }
+    const slug = slugify(formData.name);
+    const isDuplicate = products.some(
+      (p) => p.slug === slug && p.id !== editingProduct?.id
+    );
+    if (isDuplicate) {
+      toast({
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: `A bouquet with the slug "${slug}" already exists. Choose a different name.`,
       });
       return;
     }
     setIsSaving(true);
     try {
-      const slug = formData.name
-        .toLowerCase()
-        .replace(/ /g, '-')
-        .replace(/[^\w-]+/g, '');
       const dataToSave: any = {
         ...formData,
         slug,
@@ -155,6 +173,13 @@ export default function AdminBouquetsPage() {
       setIsDialogOpen(false);
       loadData();
     } catch (error) {
+      console.error(
+        JSON.stringify({
+          operation: 'admin.bouquets.save',
+          bouquetId: editingProduct?.id || null,
+          message: error instanceof Error ? error.message : String(error),
+        })
+      );
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -172,6 +197,13 @@ export default function AdminBouquetsPage() {
       setProducts(products.filter((p) => p.id !== id));
       toast({ title: 'Deleted', description: 'Bouquet removed.' });
     } catch (error) {
+      console.error(
+        JSON.stringify({
+          operation: 'admin.bouquets.delete',
+          bouquetId: id,
+          message: error instanceof Error ? error.message : String(error),
+        })
+      );
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -184,6 +216,16 @@ export default function AdminBouquetsPage() {
     return (
       <div className="p-10 flex justify-center">
         <Loader2 className="animate-spin" />
+      </div>
+    );
+
+  if (loadError)
+    return (
+      <div className="p-10 flex flex-col items-center gap-4 text-center">
+        <p className="text-destructive">{loadError}</p>
+        <Button variant="outline" onClick={loadData}>
+          Retry
+        </Button>
       </div>
     );
 
@@ -305,6 +347,7 @@ export default function AdminBouquetsPage() {
                 <Label>Price (PKR)</Label>
                 <Input
                   type="number"
+                  min="0"
                   value={formData.price}
                   onChange={(e) =>
                     setFormData({ ...formData, price: Number(e.target.value) })

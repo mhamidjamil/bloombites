@@ -87,6 +87,14 @@ export const deleteSiteImage = async (id: string) => {
   await deleteDoc(docRef);
 };
 
+// --- Slugs ---
+export const slugify = (name: string): string =>
+  name
+    .trim()
+    .toLowerCase()
+    .replace(/ /g, '-')
+    .replace(/[^\w-]+/g, '');
+
 // --- Categories ---
 export const getCategories = async (): Promise<Category[]> => {
   const colRef = collection(firestore, 'categories');
@@ -101,9 +109,32 @@ export const addCategory = async (cat: Omit<Category, 'id'>) => {
   await addDoc(colRef, cat);
 };
 
+export const updateCategory = async (id: string, data: Partial<Category>) => {
+  const docRef = doc(firestore, 'categories', id);
+  await updateDoc(docRef, data);
+};
+
 export const deleteCategory = async (id: string) => {
   const docRef = doc(firestore, 'categories', id);
   await deleteDoc(docRef);
+};
+
+// Counts products and custom items currently referencing a category slug,
+// used to block deleting a category that's still in use.
+export const countCategoryUsage = async (slug: string): Promise<number> => {
+  const productsQuery = query(
+    collection(firestore, 'products'),
+    where('category', '==', slug)
+  );
+  const itemsQuery = query(
+    collection(firestore, 'custom_items'),
+    where('category', '==', slug)
+  );
+  const [productsSnapshot, itemsSnapshot] = await Promise.all([
+    getDocs(productsQuery),
+    getDocs(itemsQuery),
+  ]);
+  return productsSnapshot.size + itemsSnapshot.size;
 };
 
 // --- Products ---

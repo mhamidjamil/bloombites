@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/tooltip';
 import ImagePicker from '@/components/image-picker';
 import { useToast } from '@/hooks/use-toast';
+import { useFirebaseAuth } from '@/firebase';
 import {
   getCustomItems,
   addCustomItem,
@@ -51,10 +52,12 @@ export default function AdminItemsPage() {
   const [items, setItems] = useState<CustomItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CustomItem | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const auth = useFirebaseAuth();
 
   const [formData, setFormData] = useState<Partial<CustomItem>>({
     name: '',
@@ -66,6 +69,7 @@ export default function AdminItemsPage() {
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const [fetchedItems, fetchedCategories] = await Promise.all([
         getCustomItems(),
@@ -74,10 +78,18 @@ export default function AdminItemsPage() {
       setItems(fetchedItems);
       setCategories(fetchedCategories);
     } catch (error) {
+      const message = 'Failed to load items.';
+      console.error(
+        JSON.stringify({
+          operation: 'admin.items.loadData',
+          message: error instanceof Error ? error.message : String(error),
+        })
+      );
+      setLoadError(message);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to load data.',
+        description: message,
       });
     } finally {
       setIsLoading(false);
@@ -147,14 +159,30 @@ export default function AdminItemsPage() {
 
   const handleSave = async () => {
     if (
-      !formData.name ||
+      !formData.name?.trim() ||
       formData.price === undefined ||
-      formData.price === null
+      formData.price === null ||
+      formData.price < 0
     ) {
       toast({
         variant: 'destructive',
         title: 'Validation Error',
-        description: 'Name and Price are required.',
+        description: 'Name is required and Price must be 0 or more.',
+      });
+      return;
+    }
+    const invalidVariant = (formData.variants || []).find(
+      (v) =>
+        !v.name?.trim() ||
+        v.price === undefined ||
+        v.price === null ||
+        v.price < 0
+    );
+    if (invalidVariant) {
+      toast({
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: 'Every variant needs a name and a price of 0 or more.',
       });
       return;
     }
@@ -172,6 +200,13 @@ export default function AdminItemsPage() {
       setIsDialogOpen(false);
       loadData();
     } catch (error) {
+      console.error(
+        JSON.stringify({
+          operation: 'admin.items.save',
+          itemId: editingItem?.id || null,
+          message: error instanceof Error ? error.message : String(error),
+        })
+      );
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -189,6 +224,13 @@ export default function AdminItemsPage() {
       setItems(items.filter((i) => i.id !== id));
       toast({ title: 'Deleted', description: 'Item removed.' });
     } catch (error) {
+      console.error(
+        JSON.stringify({
+          operation: 'admin.items.delete',
+          itemId: id,
+          message: error instanceof Error ? error.message : String(error),
+        })
+      );
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -201,6 +243,16 @@ export default function AdminItemsPage() {
     return (
       <div className="p-10 flex justify-center">
         <Loader2 className="animate-spin" />
+      </div>
+    );
+
+  if (loadError)
+    return (
+      <div className="p-10 flex flex-col items-center gap-4 text-center">
+        <p className="text-destructive">{loadError}</p>
+        <Button variant="outline" onClick={loadData}>
+          Retry
+        </Button>
       </div>
     );
 
@@ -354,6 +406,7 @@ export default function AdminItemsPage() {
                   <Label>Price (PKR)</Label>
                   <Input
                     type="number"
+                    min="0"
                     value={formData.price || ''}
                     onFocus={(e) => {
                       if (e.target.value === '0') {
@@ -434,6 +487,7 @@ export default function AdminItemsPage() {
                           <Label className="text-xs">Price</Label>
                           <Input
                             type="number"
+                            min="0"
                             value={variant.price}
                             onChange={(e) =>
                               updateVariant(
@@ -495,22 +549,46 @@ export default function AdminItemsPage() {
                             // Delete the image from server
                             if (imageToRemove) {
                               try {
-                                const filename = imageToRemove.split('/').pop();
-                                if (filename) {
-                                  await fetch('/api/items/delete', {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({ filename }),
-                                  });
+                                const idToken =
+                                  await auth.currentUser?.getIdToken();
+                                if (!idToken) {
+                                  throw new Error('Not signed in.');
+                                }
+                                const res = await fetch('/api/items/delete', {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    Authorization: `Bearer ${idToken}`,
+                                  },
+                                  body: JSON.stringify({ url: imageToRemove }),
+                                });
+                                if (!res.ok) {
+                                  const errorData = await res
+                                    .json()
+                                    .catch(() => ({}));
+                                  throw new Error(
+                                    errorData.error ||
+                                      'Failed to delete image.'
+                                  );
                                 }
                               } catch (error) {
-                                console.warn(
-                                  'Failed to delete image from server:',
-                                  error
+                                console.error(
+                                  JSON.stringify({
+                                    operation: 'admin.items.deleteImage',
+                                    itemId: editingItem?.id || null,
+                                    imageUrl: imageToRemove,
+                                    message:
+                                      error instanceof Error
+                                        ? error.message
+                                        : String(error),
+                                  })
                                 );
-                                // Don't show error to user as the image is already removed from form
+                                toast({
+                                  variant: 'destructive',
+                                  title: 'Cleanup incomplete',
+                                  description:
+                                    'Image removed from the item, but the stored file could not be deleted.',
+                                });
                               }
                             }
                           }}

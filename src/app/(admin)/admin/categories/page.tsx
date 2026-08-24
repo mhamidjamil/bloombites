@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlusCircle, Trash2, Loader2, Tag } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Tag } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -30,13 +30,24 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { getCategories, addCategory, deleteCategory } from '@/lib/db-service';
+import {
+  getCategories,
+  addCategory,
+  updateCategory,
+  deleteCategory,
+  countCategoryUsage,
+  slugify,
+} from '@/lib/db-service';
 import type { Category } from '@/lib/types';
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(
+    null
+  );
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
@@ -45,27 +56,37 @@ export default function AdminCategoriesPage() {
     type: 'product',
   });
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const data = await getCategories();
       setCategories(data);
     } catch (error) {
+      const message = 'Failed to load categories.';
+      console.error(
+        JSON.stringify({
+          operation: 'admin.categories.loadData',
+          message: error instanceof Error ? error.message : String(error),
+        })
+      );
+      setLoadError(message);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to load categories.',
+        description: message,
       });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const openNewDialog = () => {
+    setEditingCategory(null);
     setFormData({
       name: '',
       type: 'product',
@@ -73,8 +94,14 @@ export default function AdminCategoriesPage() {
     setIsDialogOpen(true);
   };
 
+  const openEditDialog = (category: Category) => {
+    setEditingCategory(category);
+    setFormData({ ...category });
+    setIsDialogOpen(true);
+  };
+
   const handleSave = async () => {
-    if (!formData.name) {
+    if (!formData.name?.trim()) {
       toast({
         variant: 'destructive',
         title: 'Validation Error',
@@ -82,24 +109,44 @@ export default function AdminCategoriesPage() {
       });
       return;
     }
+    const slug = slugify(formData.name);
+    const isDuplicate = categories.some(
+      (c) => c.slug === slug && c.id !== editingCategory?.id
+    );
+    if (isDuplicate) {
+      toast({
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: `A category with the slug "${slug}" already exists. Choose a different name.`,
+      });
+      return;
+    }
     setIsSaving(true);
     try {
-      const slug = formData.name
-        .toLowerCase()
-        .replace(/ /g, '-')
-        .replace(/[^\w-]+/g, '');
       const dataToSave: any = {
         name: formData.name,
         type: formData.type || 'product',
         slug,
       };
 
-      await addCategory(dataToSave);
-      toast({ title: 'Success', description: 'Category created.' });
+      if (editingCategory && editingCategory.id) {
+        await updateCategory(editingCategory.id, dataToSave);
+        toast({ title: 'Success', description: 'Category updated.' });
+      } else {
+        await addCategory(dataToSave);
+        toast({ title: 'Success', description: 'Category created.' });
+      }
 
       setIsDialogOpen(false);
       loadData();
     } catch (error) {
+      console.error(
+        JSON.stringify({
+          operation: 'admin.categories.save',
+          categoryId: editingCategory?.id || null,
+          message: error instanceof Error ? error.message : String(error),
+        })
+      );
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -110,13 +157,29 @@ export default function AdminCategoriesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (category: Category) => {
     if (!confirm('Are you sure you want to delete this category?')) return;
     try {
-      await deleteCategory(id);
-      setCategories(categories.filter((c) => c.id !== id));
+      const usageCount = await countCategoryUsage(category.slug);
+      if (usageCount > 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Cannot delete',
+          description: `${usageCount} product/item record${usageCount === 1 ? '' : 's'} use this category.`,
+        });
+        return;
+      }
+      await deleteCategory(category.id);
+      setCategories(categories.filter((c) => c.id !== category.id));
       toast({ title: 'Deleted', description: 'Category removed.' });
     } catch (error) {
+      console.error(
+        JSON.stringify({
+          operation: 'admin.categories.delete',
+          categoryId: category.id,
+          message: error instanceof Error ? error.message : String(error),
+        })
+      );
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -129,6 +192,16 @@ export default function AdminCategoriesPage() {
     return (
       <div className="p-10 flex justify-center">
         <Loader2 className="animate-spin" />
+      </div>
+    );
+
+  if (loadError)
+    return (
+      <div className="p-10 flex flex-col items-center gap-4 text-center">
+        <p className="text-destructive">{loadError}</p>
+        <Button variant="outline" onClick={loadData}>
+          Retry
+        </Button>
       </div>
     );
 
@@ -180,8 +253,15 @@ export default function AdminCategoriesPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => openEditDialog(cat)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="text-destructive"
-                      onClick={() => handleDelete(cat.id)}
+                      onClick={() => handleDelete(cat)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -196,9 +276,13 @@ export default function AdminCategoriesPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Category</DialogTitle>
+            <DialogTitle>
+              {editingCategory ? 'Edit Category' : 'Create Category'}
+            </DialogTitle>
             <DialogDescription>
-              Add a new category for bouquets or custom items.
+              {editingCategory
+                ? 'Update this category.'
+                : 'Add a new category for bouquets or custom items.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">

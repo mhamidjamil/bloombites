@@ -43,6 +43,7 @@ import type { BouquetStyle } from '@/lib/types';
 export default function AdminStylesPage() {
   const [styles, setStyles] = useState<BouquetStyle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStyle, setEditingStyle] = useState<BouquetStyle | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,15 +59,24 @@ export default function AdminStylesPage() {
   });
 
   const loadStyles = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
     try {
       const fetchedStyles = await getBouquetStyles();
       setStyles(fetchedStyles);
     } catch (error) {
-      console.error('Failed to load styles:', error);
+      const message = 'Failed to load styles.';
+      console.error(
+        JSON.stringify({
+          operation: 'admin.styles.loadStyles',
+          message: error instanceof Error ? error.message : String(error),
+        })
+      );
+      setLoadError(message);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to load styles.',
+        description: message,
       });
     } finally {
       setIsLoading(false);
@@ -107,6 +117,19 @@ export default function AdminStylesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (
+      !formData.name.trim() ||
+      formData.price === undefined ||
+      formData.price === null ||
+      formData.price < 0
+    ) {
+      toast({
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: 'Name is required and Price must be 0 or more.',
+      });
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -128,7 +151,13 @@ export default function AdminStylesPage() {
       resetForm();
       loadStyles();
     } catch (error) {
-      console.error('Failed to save style:', error);
+      console.error(
+        JSON.stringify({
+          operation: 'admin.styles.save',
+          styleId: editingStyle?.id || null,
+          message: error instanceof Error ? error.message : String(error),
+        })
+      );
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -150,7 +179,13 @@ export default function AdminStylesPage() {
       });
       loadStyles();
     } catch (error) {
-      console.error('Failed to delete style:', error);
+      console.error(
+        JSON.stringify({
+          operation: 'admin.styles.delete',
+          styleId: id,
+          message: error instanceof Error ? error.message : String(error),
+        })
+      );
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -171,6 +206,17 @@ export default function AdminStylesPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4 text-center">
+        <p className="text-destructive">{loadError}</p>
+        <Button variant="outline" onClick={loadStyles}>
+          Retry
+        </Button>
       </div>
     );
   }
@@ -235,7 +281,7 @@ export default function AdminStylesPage() {
                       <TableCell className="max-w-xs truncate">
                         {style.description}
                       </TableCell>
-                      <TableCell>R{style.price}</TableCell>
+                      <TableCell>PKR {style.price.toLocaleString()}</TableCell>
                       <TableCell>
                         <span
                           className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
@@ -328,7 +374,7 @@ export default function AdminStylesPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="price">Price (R)</Label>
+                  <Label htmlFor="price">Price (PKR)</Label>
                   <Input
                     id="price"
                     type="number"
