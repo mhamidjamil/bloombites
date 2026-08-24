@@ -20,7 +20,8 @@ import { Suspense, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
 function getSafeRedirect(redirect: string | null): string {
-  if (redirect && redirect.startsWith('/')) {
+  // A leading '//' or '/\\' is a protocol-relative URL and would leave the site.
+  if (redirect && /^\/(?![\/\\])/.test(redirect)) {
     return redirect;
   }
   return '/';

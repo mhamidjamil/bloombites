@@ -1,5 +1,6 @@
 'use client';
 
+import { getAuth } from 'firebase/auth';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -102,7 +103,9 @@ export default function CheckoutPage() {
     setSubmitError(null);
     try {
       const order = await createOrder({
-        userId: user?.uid ?? null,
+        // Firestore rules judge request.auth, so use the auth SDK's user when
+        // the profile listener has not resolved yet.
+        userId: user?.uid ?? getAuth().currentUser?.uid ?? null,
         items,
         customerDetails: {
           name: values.name,
