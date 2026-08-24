@@ -98,7 +98,11 @@ const useCartStore = create<CartState>()(
         const totals = state
           ? calculateTotals(state.items)
           : { totalItems: 0, totalPrice: 0 };
-        useCartStore.setState({ ...totals, hasHydrated: true });
+        // Rehydration runs synchronously during store creation, before the
+        // useCartStore const exists; defer one microtask to avoid the TDZ.
+        queueMicrotask(() => {
+          useCartStore.setState({ ...totals, hasHydrated: true });
+        });
       },
     }
   )

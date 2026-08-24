@@ -1,22 +1,35 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 interface SiteLoaderProps {
   isLoading: boolean;
   onLoadingComplete?: () => void;
 }
 
-function hasSeenIntro() {
-  if (typeof window === 'undefined') return false;
-  return sessionStorage.getItem('bloom_intro_seen') === 'true';
+const noopSubscribe = () => () => {};
+// Server HTML always renders the loader; useSyncExternalStore swaps to the
+// client value after hydration without a mismatch.
+function useHasSeenIntro() {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      try {
+        return sessionStorage.getItem('bloom_intro_seen') === 'true';
+      } catch {
+        return true;
+      }
+    },
+    () => false
+  );
 }
 
 export function SiteLoader({ isLoading, onLoadingComplete }: SiteLoaderProps) {
-  const [skipExit] = useState(hasSeenIntro);
-  const [show, setShow] = useState(() => !hasSeenIntro());
+  const skipExit = useHasSeenIntro();
+  const [dismissed, setDismissed] = useState(false);
   const [progress, setProgress] = useState(0);
+  const show = !skipExit && !dismissed;
 
   useEffect(() => {
     if (skipExit) {
@@ -50,7 +63,7 @@ export function SiteLoader({ isLoading, onLoadingComplete }: SiteLoaderProps) {
 
     if (progress === 100 && !isLoading) {
       const exitTimer = setTimeout(() => {
-        setShow(false);
+        setDismissed(true);
         onLoadingComplete?.();
       }, 500); // Wait a bit at 100%
       return () => clearTimeout(exitTimer);

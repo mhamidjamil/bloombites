@@ -50,6 +50,7 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const prefilled = useRef(false);
+  const [orderPlaced, setOrderPlaced] = useState(false);
 
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
@@ -72,10 +73,10 @@ export default function CheckoutPage() {
   }, [user, form]);
 
   useEffect(() => {
-    if (hasHydrated && totalItems === 0) {
+    if (hasHydrated && totalItems === 0 && !orderPlaced) {
       router.push('/shop');
     }
-  }, [hasHydrated, totalItems, router]);
+  }, [hasHydrated, totalItems, orderPlaced, router]);
 
   if (!hasHydrated) {
     return (
@@ -114,6 +115,7 @@ export default function CheckoutPage() {
           province: values.province,
         },
       });
+      setOrderPlaced(true);
       clearCart();
       router.push(`/order-confirmation/${order.id}`);
     } catch (error) {

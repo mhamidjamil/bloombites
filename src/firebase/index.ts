@@ -43,7 +43,10 @@ export function initializeFirebase(): {
     connectFirestoreEmulator(firestore, '127.0.0.1', 8080);
   }
 
-  if (typeof window !== 'undefined') {
+  if (
+    typeof window !== 'undefined' &&
+    process.env.NEXT_PUBLIC_FIREBASE_EMULATOR !== '1'
+  ) {
     isSupported().then((supported) => {
       if (supported) {
         getAnalytics(app);
