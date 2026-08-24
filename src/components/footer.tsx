@@ -1,4 +1,3 @@
-import { Facebook, Instagram, Twitter } from 'lucide-react';
 import Logo from './logo';
 import Link from 'next/link';
 
@@ -52,34 +51,6 @@ const Footer = () => {
                 </Link>
               </li>
             </ul>
-          </div>
-          <div>
-            <h3 className="font-bold font-headline text-lg text-primary">
-              Follow Us
-            </h3>
-            <div className="mt-4 flex space-x-4">
-              <Link
-                href="#"
-                aria-label="Facebook"
-                className="hover:text-primary transition-colors"
-              >
-                <Facebook />
-              </Link>
-              <Link
-                href="#"
-                aria-label="Instagram"
-                className="hover:text-primary transition-colors"
-              >
-                <Instagram />
-              </Link>
-              <Link
-                href="#"
-                aria-label="Twitter"
-                className="hover:text-primary transition-colors"
-              >
-                <Twitter />
-              </Link>
-            </div>
           </div>
         </div>
         <div className="mt-8 border-t border-accent-foreground/20 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-accent-foreground/60">
