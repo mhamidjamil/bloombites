@@ -36,6 +36,8 @@ import {
   getCustomItems,
   getBouquetStyles,
 } from '@/lib/db-service';
+import useCartStore from '@/lib/cart-store';
+import type { CustomBouquet } from '@/lib/types';
 
 type SelectedBouquetItem = {
   id: string; // Unique identifier for each selected item instance
@@ -70,6 +72,7 @@ export default function CustomBouquetBuilder() {
     'Design your own unique snack bouquet from scratch'
   );
   const { toast } = useToast();
+  const addItem = useCartStore((state) => state.addItem);
 
   useEffect(() => {
     const loadData = async () => {
@@ -247,6 +250,49 @@ export default function CustomBouquetBuilder() {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleAddToCart = () => {
+    if (!selectedStyle || selectedItems.length === 0) return;
+
+    const itemsSummary = selectedItems
+      .map((selected) => {
+        const variantLabel = selected.selectedVariant
+          ? ` (${selected.selectedVariant.name})`
+          : '';
+        return `${selected.item.name}${variantLabel} x${selected.quantity}`;
+      })
+      .join(', ');
+
+    const description = [
+      itemsSummary,
+      `Style: ${selectedStyle.name}`,
+      instructions ? `Instructions: ${instructions}` : null,
+    ]
+      .filter(Boolean)
+      .join(' | ');
+
+    const customBouquet: CustomBouquet = {
+      id: 'custom-bouquet',
+      name: aiName || `Custom Bouquet - ${selectedStyle.name}`,
+      description,
+      price: totalPrice,
+      items: selectedItems.map((selected) => selected.item),
+      instructions,
+    };
+
+    addItem(customBouquet, 1);
+    toast({
+      title: 'Added to cart',
+      description: 'Your custom bouquet was added to the cart.',
+    });
+
+    setSelectedItems([]);
+    setSelectedStyle(null);
+    setInstructions('');
+    setAiName('');
+    setAiDescription('');
+    setCurrentStage('items');
   };
 
   return (
@@ -800,6 +846,7 @@ export default function CustomBouquetBuilder() {
                         size="sm"
                         className="w-full"
                         disabled={!selectedStyle}
+                        onClick={handleAddToCart}
                       >
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Add to Cart

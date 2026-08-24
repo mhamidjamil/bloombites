@@ -8,19 +8,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { orders, bouquets as mockBouquets, customItems } from '@/lib/mock-data';
 import {
   Package,
   ShoppingBasket,
   Users,
   Image as ImageIcon,
-  LayoutDashboard,
-  Save,
   Trash2,
   Copy,
-  Plus,
-  Pencil,
-  MoreHorizontal,
   Loader2,
   X,
 } from 'lucide-react';
@@ -28,36 +22,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import ImageUpload from '@/components/image-upload'; // Keep for Images tab direct usage or replace there too? User said "all over the app". I will use ImagePicker there too.
 import ImagePicker from '@/components/image-picker';
 import {
   getLandingPageData,
@@ -66,13 +34,11 @@ import {
   addSiteImage,
   deleteSiteImage,
   getBouquets,
-  addProduct,
-  updateProduct,
-  deleteProduct,
-  getCategories,
+  getCustomItems,
+  getOrders,
   type SiteImage,
 } from '@/lib/db-service';
-import type { Bouquet, Category } from '@/lib/types';
+import type { Order } from '@/lib/types';
 
 export default function AdminDashboardPage() {
   // Content State
@@ -87,24 +53,13 @@ export default function AdminDashboardPage() {
   const [images, setImages] = useState<SiteImage[]>([]);
   const [imageSearch, setImageSearch] = useState('');
 
-  // Products State
-  const [products, setProducts] = useState<Bouquet[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Bouquet | null>(null);
-  const [isSavingProduct, setIsSavingProduct] = useState(false);
-
-  // Product Form State
-  const [productForm, setProductForm] = useState<Partial<Bouquet>>({
-    name: '',
-    description: '',
-    price: 0,
-    category: '',
-    images: [],
-    isFeatured: false,
-    isEnabled: true,
-    items: [],
+  // Overview State
+  const [stats, setStats] = useState({
+    bouquets: 0,
+    items: 0,
+    pendingOrders: 0,
   });
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -113,12 +68,13 @@ export default function AdminDashboardPage() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [content, fetchedImages, fetchedProducts, fetchedCategories] =
+      const [content, fetchedImages, fetchedBouquets, fetchedCustomItems, fetchedOrders] =
         await Promise.all([
           getLandingPageData(),
           getSiteImages(),
           getBouquets(),
-          getCategories(),
+          getCustomItems(),
+          getOrders(),
         ]);
 
       // Load Content
@@ -138,10 +94,18 @@ export default function AdminDashboardPage() {
       }
 
       setImages(fetchedImages);
-      setProducts(fetchedProducts);
-      setCategories(fetchedCategories);
+      setStats({
+        bouquets: fetchedBouquets.length,
+        items: fetchedCustomItems.length,
+        pendingOrders: fetchedOrders.filter((o) => o.status === 'Pending')
+          .length,
+      });
+      setRecentOrders(fetchedOrders.slice(0, 5));
     } catch (error) {
-      console.error('Failed to load admin data', error);
+      console.error('admin-dashboard.loadData failed', {
+        operation: 'loadData',
+        error,
+      });
       toast({
         variant: 'destructive',
         title: 'Error loading data',
@@ -174,6 +138,10 @@ export default function AdminDashboardPage() {
         description: 'Content changes have been saved successfully.',
       });
     } catch (error) {
+      console.error('admin-dashboard.saveContent failed', {
+        operation: 'updateLandingPageData',
+        error,
+      });
       toast({
         variant: 'destructive',
         title: 'Save Failed',
@@ -195,12 +163,6 @@ export default function AdminDashboardPage() {
 
   // --- Image Handlers ---
   const handleImageUploaded = async (url: string) => {
-    // ImagePicker handles saving to library for uploads.
-    // But if user uses URL tab in Images tab, we might want to explicitly save it?
-    // ImagePicker's URL tab doesn't auto-save to library currently.
-    // Let's force save here if it's new.
-    // Actually, for the "Images" tab, reusing ImagePicker is tricky if I want "Paste URL" to also create a library entry.
-    // I'll assume if they use "Paste URL" here, they want to add it to library.
     try {
       const exists = images.find((i) => i.url === url);
       if (!exists) {
@@ -218,8 +180,17 @@ export default function AdminDashboardPage() {
           description: 'Image added to library.',
         });
       }
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error('admin-dashboard.addSiteImage failed', {
+        operation: 'addSiteImage',
+        url,
+        error,
+      });
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to save image to the library.',
+      });
     }
   };
 
@@ -232,6 +203,11 @@ export default function AdminDashboardPage() {
         description: 'Image removed from library.',
       });
     } catch (error) {
+      console.error('admin-dashboard.deleteSiteImage failed', {
+        operation: 'deleteSiteImage',
+        imageId: id,
+        error,
+      });
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -245,121 +221,16 @@ export default function AdminDashboardPage() {
     toast({ title: 'Copied!', description: 'Image URL copied to clipboard.' });
   };
 
-  // --- Product Handlers ---
-  const openNewProductDialog = () => {
-    setEditingProduct(null);
-    setProductForm({
-      name: '',
-      description: '',
-      price: 0,
-      category: categories.find((c) => c.type === 'product')?.slug || '',
-      images: [''],
-      isFeatured: false,
-      isEnabled: true,
-      items: [],
-    });
-    setIsProductDialogOpen(true);
-  };
-
-  const openEditProductDialog = (product: Bouquet) => {
-    setEditingProduct(product);
-    setProductForm({ ...product });
-    setIsProductDialogOpen(true);
-  };
-
-  const handleSaveProduct = async () => {
-    if (!productForm.name || !productForm.price) {
-      toast({
-        variant: 'destructive',
-        title: 'Validation Error',
-        description: 'Name and Price are required.',
-      });
-      return;
-    }
-    setIsSavingProduct(true);
-
-    try {
-      const slug = productForm.name
-        .toLowerCase()
-        .replace(/ /g, '-')
-        .replace(/[^\w-]+/g, '');
-      const dataToSave: any = {
-        ...productForm,
-        slug,
-        items: productForm.items || [],
-      };
-
-      if (editingProduct && editingProduct.id) {
-        await updateProduct(editingProduct.id, dataToSave);
-        toast({
-          title: 'Product Updated',
-          description: `${productForm.name} saved.`,
-        });
-      } else {
-        await addProduct(dataToSave);
-        toast({
-          title: 'Product Created',
-          description: `${productForm.name} created.`,
-        });
-      }
-
-      // Refresh
-      const fetchedProducts = await getBouquets();
-      setProducts(fetchedProducts);
-      setIsProductDialogOpen(false);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to save product.',
-      });
-    } finally {
-      setIsSavingProduct(false);
-    }
-  };
-
-  const handleDeleteProduct = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
-    try {
-      await deleteProduct(id);
-      setProducts(products.filter((p) => p.id !== id));
-      toast({
-        title: 'Product Deleted',
-        description: 'Product has been removed.',
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to delete product.',
-      });
-    }
-  };
-
   const filteredImages = images.filter(
     (img) =>
       img.name?.toLowerCase().includes(imageSearch.toLowerCase()) ||
       img.description?.toLowerCase().includes(imageSearch.toLowerCase())
   );
 
-  const productCategories = categories.filter((c) => c.type === 'product');
-
-  const stats = [
-    {
-      title: 'Total Bouquets',
-      count: products.length || mockBouquets.length, // Fallback purely visual for now
-      icon: Package,
-    },
-    {
-      title: 'Total Items',
-      count: customItems.length, // Placeholder
-      icon: ShoppingBasket,
-    },
-    {
-      title: 'Pending Orders',
-      count: orders.filter((o) => o.status === 'processing').length,
-      icon: Users,
-    },
+  const statCards = [
+    { title: 'Total Bouquets', count: stats.bouquets, icon: Package },
+    { title: 'Total Items', count: stats.items, icon: ShoppingBasket },
+    { title: 'Pending Orders', count: stats.pendingOrders, icon: Users },
   ];
 
   if (isLoading) {
@@ -379,17 +250,16 @@ export default function AdminDashboardPage() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 max-w-xl">
+        <TabsList className="grid w-full grid-cols-3 max-w-md">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="images">Images</TabsTrigger>
         </TabsList>
 
         {/* OVERVIEW TAB */}
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {stats.map((stat) => (
+            {statCards.map((stat) => (
               <Card key={stat.title}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -406,31 +276,35 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>
-                Latest orders and system events. (Mock Data)
-              </CardDescription>
+              <CardDescription>Latest orders.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {orders.slice(0, 5).map((order) => (
-                  <div
-                    key={order.id}
-                    className="flex justify-between items-center border-b pb-2 last:border-0 last:pb-0"
-                  >
-                    <div>
-                      <p className="font-medium text-sm">
-                        {order.customerDetails.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {order.id} • {order.status}
-                      </p>
+              {recentOrders.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  No orders yet.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {recentOrders.map((order) => (
+                    <div
+                      key={order.id}
+                      className="flex justify-between items-center border-b pb-2 last:border-0 last:pb-0"
+                    >
+                      <div>
+                        <p className="font-medium text-sm">
+                          {order.customerDetails.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {order.orderNumber} • {order.status}
+                        </p>
+                      </div>
+                      <div className="text-sm font-bold">
+                        PKR {order.totalAmount.toLocaleString()}
+                      </div>
                     </div>
-                    <div className="text-sm font-bold">
-                      PKR {order.totalAmount.toLocaleString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -515,7 +389,7 @@ export default function AdminDashboardPage() {
                       onCheckedChange={setShowPromo}
                     />
                     <Label htmlFor="show-promo">
-                      Show "Build Custom Bouquet" Promo Section
+                      Show &quot;Build Custom Bouquet&quot; Promo Section
                     </Label>
                   </div>
                   <div className="space-y-2">
@@ -557,206 +431,6 @@ export default function AdminDashboardPage() {
           </Card>
         </TabsContent>
 
-        {/* PRODUCTS TAB */}
-        <TabsContent value="products">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Products Management</CardTitle>
-                <CardDescription>Manage bouquets and products.</CardDescription>
-              </div>
-              <Button onClick={openNewProductDialog}>
-                <Plus className="mr-2 h-4 w-4" /> Add Product
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.length === 0 && (
-                  <div className="col-span-3 text-center py-10">
-                    No products found. Add one!
-                  </div>
-                )}
-                {products.map((product) => (
-                  <Card key={product.id} className="relative">
-                    <CardHeader className="pb-2">
-                      <div className="absolute top-4 right-4">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => openEditProductDialog(product)}
-                            >
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-red-600"
-                              onClick={() => handleDeleteProduct(product.id)}
-                            >
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <CardTitle className="text-lg">{product.name}</CardTitle>
-                      <CardDescription className="line-clamp-1">
-                        {product.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pb-2">
-                      <div className="w-full h-32 bg-muted rounded-md mb-2 overflow-hidden">
-                        <img
-                          src={product.images[0] || '/placeholder.jpg'}
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <p className="font-bold">PKR {product.price}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Product Edit Dialog */}
-          <Dialog
-            open={isProductDialogOpen}
-            onOpenChange={setIsProductDialogOpen}
-          >
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingProduct ? 'Edit Product' : 'Add New Product'}
-                </DialogTitle>
-                <DialogDescription>
-                  Fill in the details for the bouquet.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="p-name">Name</Label>
-                    <Input
-                      id="p-name"
-                      value={productForm.name}
-                      onChange={(e) =>
-                        setProductForm({ ...productForm, name: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="p-price">Price (PKR)</Label>
-                    <Input
-                      id="p-price"
-                      type="number"
-                      value={productForm.price}
-                      onChange={(e) =>
-                        setProductForm({
-                          ...productForm,
-                          price: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="p-desc">Description</Label>
-                  <Textarea
-                    id="p-desc"
-                    value={productForm.description}
-                    onChange={(e) =>
-                      setProductForm({
-                        ...productForm,
-                        description: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="p-cat">Category</Label>
-                  <Select
-                    value={productForm.category}
-                    onValueChange={(val: any) =>
-                      setProductForm({ ...productForm, category: val })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {productCategories.length === 0 && (
-                        <SelectItem value="mixed">Mixed (Default)</SelectItem>
-                      )}
-                      {productCategories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.slug}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Product Image</Label>
-                  <div className="flex items-start gap-4 p-4 border rounded-md">
-                    {productForm.images && productForm.images[0] ? (
-                      <div className="relative w-24 h-24 rounded overflow-hidden shrink-0">
-                        <img
-                          src={productForm.images[0]}
-                          className="w-full h-full object-cover"
-                          alt="Product"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-0 right-0 h-5 w-5 bg-white/50 hover:bg-white"
-                          onClick={() =>
-                            setProductForm({ ...productForm, images: [] })
-                          }
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="text-sm text-muted-foreground self-center">
-                        No image
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <ImagePicker
-                        onImageSelected={(url) =>
-                          setProductForm({ ...productForm, images: [url] })
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="p-featured"
-                    checked={productForm.isFeatured}
-                    onCheckedChange={(checked) =>
-                      setProductForm({ ...productForm, isFeatured: checked })
-                    }
-                  />
-                  <Label htmlFor="p-featured">Featured Product</Label>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={handleSaveProduct} disabled={isSavingProduct}>
-                  {isSavingProduct && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Save Product
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </TabsContent>
-
         {/* IMAGES TAB */}
         <TabsContent value="images">
           <Card>
@@ -792,23 +466,23 @@ export default function AdminDashboardPage() {
                 {filteredImages.map((img) => (
                   <div
                     key={img.id}
-                    className="flex gap-4 border p-4 rounded-lg items-start bg-card/50"
+                    className="flex gap-4 border p-4 rounded-lg items-center bg-card/50"
                   >
-                    <div className="relative h-24 w-24 flex-shrink-0 bg-muted rounded-md overflow-hidden group">
+                    <div className="relative h-24 w-24 flex-shrink-0 bg-muted rounded-md overflow-hidden">
                       <img
                         src={img.url}
                         alt={img.name}
                         className="object-cover w-full h-full"
                       />
                     </div>
-                    <div className="flex-grow space-y-2 min-w-0">
-                      <div>
+                    <div className="flex-grow flex items-center justify-between gap-4 min-w-0">
+                      <div className="min-w-0">
                         <p className="font-bold text-sm truncate">{img.name}</p>
                         <p className="text-xs text-muted-foreground line-clamp-1">
                           {new Date(img.uploadedAt).toLocaleDateString()}
                         </p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 shrink-0">
                         <Button
                           size="sm"
                           variant="outline"

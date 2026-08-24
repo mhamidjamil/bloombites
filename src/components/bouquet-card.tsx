@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Bouquet } from '@/lib/types';
@@ -10,41 +12,48 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { placeholderImages } from '@/lib/placeholder-images';
 import { Eye, ShoppingCart } from 'lucide-react';
+import useCartStore from '@/lib/cart-store';
+import { useToast } from '@/hooks/use-toast';
 
 type BouquetCardProps = {
   bouquet: Bouquet;
 };
 
 const BouquetCard = ({ bouquet }: BouquetCardProps) => {
-  let imageUrl = '/placeholder.jpg';
-  let imageHint = '';
+  const addItem = useCartStore((state) => state.addItem);
+  const { toast } = useToast();
+  const imageUrl = bouquet.images?.[0];
 
-  const placeholder = placeholderImages.find((p) => p.id === bouquet.images[0]);
-  if (placeholder) {
-    imageUrl = placeholder.imageUrl;
-    imageHint = placeholder.imageHint;
-  } else if (bouquet.images && bouquet.images.length > 0) {
-    imageUrl = bouquet.images[0];
-  }
+  const handleAddToCart = () => {
+    addItem(bouquet, 1);
+    toast({
+      title: 'Added to cart',
+      description: `${bouquet.name} was added to your cart.`,
+    });
+  };
 
   return (
     <Card className="flex flex-col overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="p-0">
         <Link
           href={`/shop/${bouquet.slug}`}
-          className="block aspect-square relative"
+          className="block aspect-square relative bg-muted"
         >
-          <Image
-            src={imageUrl}
-            alt={bouquet.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            data-ai-hint={imageHint}
-            unoptimized={imageUrl.startsWith('http')}
-          />
+          {imageUrl ? (
+            <Image
+              src={imageUrl}
+              alt={bouquet.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              unoptimized={imageUrl.startsWith('http')}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
+              No Image
+            </div>
+          )}
         </Link>
       </CardHeader>
       <CardContent className="p-4 flex-grow">
@@ -71,8 +80,7 @@ const BouquetCard = ({ bouquet }: BouquetCardProps) => {
               <span className="sr-only">View Details</span>
             </Link>
           </Button>
-          {/* Add to cart functionality would be here */}
-          <Button size="icon">
+          <Button size="icon" onClick={handleAddToCart}>
             <ShoppingCart className="h-4 w-4" />
             <span className="sr-only">Add to Cart</span>
           </Button>

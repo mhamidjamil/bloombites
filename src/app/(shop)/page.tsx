@@ -4,8 +4,15 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { testimonials } from '@/lib/mock-data';
-import { ArrowRight, Star, Truck, Heart, Palette, Quote } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowRight,
+  Star,
+  Truck,
+  Heart,
+  Palette,
+  Quote,
+} from 'lucide-react';
 import BouquetCard from '@/components/bouquet-card';
 import {
   Carousel,
@@ -19,15 +26,36 @@ import {
   getBouquets,
   type LandingPageData,
 } from '@/lib/db-service';
-import type { Bouquet } from '@/lib/types';
-import { featuredBouquets as mockFeatured } from '@/lib/mock-data';
+import type { Bouquet, Testimonial } from '@/lib/types';
 import { ScrollReveal } from '@/components/ui/scroll-reveal';
 import { SiteLoader } from '@/components/ui/site-loader';
+
+const testimonials: Testimonial[] = [
+  {
+    id: 1,
+    quote:
+      'Absolutely stunning bouquet! It was the perfect birthday gift and my friend loved it. The delivery was super fast too.',
+    author: 'Aisha Khan',
+  },
+  {
+    id: 2,
+    quote:
+      'I ordered a custom bouquet and the process was so easy and fun. The final product exceeded my expectations. Highly recommend BloomBites!',
+    author: 'Bilal Ahmed',
+  },
+  {
+    id: 3,
+    quote:
+      "The quality of the snacks and the presentation are top-notch. It's my go-to place for gifts now. Fantastic service!",
+    author: 'Fatima Ali',
+  },
+];
 
 export default function Home() {
   const [content, setContent] = useState<LandingPageData | null>(null);
   const [products, setProducts] = useState<Bouquet[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -36,7 +64,10 @@ export default function Home() {
     // Safety timeout
     const timeoutId = setTimeout(() => {
       if (isMounted) {
-        console.warn('Home page data fetch timed out.');
+        console.error('homepage.fetchData timed out', {
+          operation: 'getLandingPageData/getBouquets',
+        });
+        setLoadError(true);
         setDataLoaded(true); // Allow site to show even if data fails
       }
     }, 5000);
@@ -54,8 +85,14 @@ export default function Home() {
           setDataLoaded(true);
         }
       } catch (error) {
-        console.error('Failed to load home data', error);
-        if (isMounted) setDataLoaded(true);
+        console.error('homepage.fetchData failed', {
+          operation: 'getLandingPageData/getBouquets',
+          error,
+        });
+        if (isMounted) {
+          setLoadError(true);
+          setDataLoaded(true);
+        }
       }
     }
     fetchData();
@@ -74,7 +111,7 @@ export default function Home() {
     displayHeroImages = [content.hero.imageUrl];
   } else {
     // Use local hero image from public folder as default
-    displayHeroImages = ['/hero-default.png'];
+    displayHeroImages = ['/hero-default.webp'];
   }
 
   // Hero Slideshow Logic
@@ -93,9 +130,10 @@ export default function Home() {
     content?.hero?.subtitle ||
     'Surprise your loved ones with our handcrafted snack bouquets. The perfect blend of elegance and flavor for every occasion.';
 
-  const featured = products.filter((p) => p.isFeatured);
+  const enabledProducts = products.filter((p) => p.isEnabled !== false);
+  const featured = enabledProducts.filter((p) => p.isFeatured);
   const displayFeatured =
-    featured.length > 0 ? featured : products.length === 0 ? mockFeatured : [];
+    featured.length > 0 ? featured : enabledProducts.slice(0, 6);
 
   return (
     <div className="flex flex-col min-h-screen bg-black">
@@ -103,6 +141,12 @@ export default function Home() {
       {/* Set bg-black to hide flashing white before loader leaves */}
       {/* 1. Full Screen Loader */}
       <SiteLoader isLoading={!dataLoaded} />
+      {dataLoaded && loadError && (
+        <div className="relative z-40 bg-destructive/10 text-destructive text-sm text-center py-2 px-4">
+          <AlertTriangle className="inline h-4 w-4 mr-2 -mt-0.5" />
+          Some content failed to load. Showing defaults where needed.
+        </div>
+      )}
       {/* Hero Section */}
       <section className="relative h-[95vh] w-full overflow-hidden bg-black font-sans">
         {' '}
@@ -243,51 +287,53 @@ export default function Home() {
         </div>
       </section>
       {/* Featured Bouquets - 3D Carousel Style Showcase */}
-      <section className="py-32 bg-white dark:bg-muted/30">
-        <div className="container mx-auto px-4">
-          <ScrollReveal animation="fade-up" className="text-center mb-20">
-            <h2 className="text-4xl md:text-6xl font-headline font-bold text-foreground mb-6">
-              Featured Collections
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto font-medium">
-              Our most popular arrangements, curated to bring joy and delight.
-            </p>
-          </ScrollReveal>
+      {displayFeatured.length > 0 && (
+        <section className="py-32 bg-white dark:bg-muted/30">
+          <div className="container mx-auto px-4">
+            <ScrollReveal animation="fade-up" className="text-center mb-20">
+              <h2 className="text-4xl md:text-6xl font-headline font-bold text-foreground mb-6">
+                Featured Collections
+              </h2>
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto font-medium">
+                Our most popular arrangements, curated to bring joy and delight.
+              </p>
+            </ScrollReveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {displayFeatured.map((bouquet, idx) => (
-              <ScrollReveal
-                key={bouquet.id}
-                animation="3d-flip"
-                delay={idx * 0.15}
-                duration={0.8}
-              >
-                <div className="h-full">
-                  <BouquetCard bouquet={bouquet} />
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+              {displayFeatured.map((bouquet, idx) => (
+                <ScrollReveal
+                  key={bouquet.id}
+                  animation="3d-flip"
+                  delay={idx * 0.15}
+                  duration={0.8}
+                >
+                  <div className="h-full">
+                    <BouquetCard bouquet={bouquet} />
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
 
-          <ScrollReveal
-            animation="fade-up"
-            delay={0.4}
-            className="text-center mt-20"
-          >
-            <Button
-              asChild
-              variant="default"
-              size="lg"
-              className="rounded-full px-10 py-6 text-lg shadow-xl hover:scale-105 transition-transform"
+            <ScrollReveal
+              animation="fade-up"
+              delay={0.4}
+              className="text-center mt-20"
             >
-              <Link href="/shop" className="group">
-                View All Collections
-                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Link>
-            </Button>
-          </ScrollReveal>
-        </div>
-      </section>
+              <Button
+                asChild
+                variant="default"
+                size="lg"
+                className="rounded-full px-10 py-6 text-lg shadow-xl hover:scale-105 transition-transform"
+              >
+                <Link href="/shop" className="group">
+                  View All Collections
+                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </Button>
+            </ScrollReveal>
+          </div>
+        </section>
+      )}
       {/* Custom Bouquet Builder Promo */}
       {(content?.featured?.showPromo ?? true) && (
         <section className="py-32 bg-background overflow-hidden">
@@ -330,7 +376,7 @@ export default function Home() {
                       <Image
                         src={
                           content?.featured?.promoImageUrl ||
-                          '/custom-builder-promo.jpg'
+                          '/custom-builder-promo.svg'
                         }
                         alt="Custom bouquet builder"
                         fill
@@ -373,7 +419,7 @@ export default function Home() {
                       <div className="h-full p-10 rounded-3xl bg-card border shadow-sm flex flex-col hover:shadow-xl transition-shadow duration-300">
                         <Quote className="h-10 w-10 text-primary/20 mb-6" />
                         <p className="text-lg text-foreground/80 italic mb-8 flex-grow leading-relaxed">
-                          "{testimonial.quote}"
+                          &quot;{testimonial.quote}&quot;
                         </p>
                         <div className="flex items-center mt-auto border-t pt-6 border-border/50">
                           <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg mr-4 border border-primary/20">

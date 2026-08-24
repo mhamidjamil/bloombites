@@ -10,6 +10,7 @@ import {
   deleteDoc,
   query,
   orderBy,
+  where,
 } from 'firebase/firestore';
 
 const { firestore } = initializeFirebase();
@@ -55,7 +56,18 @@ export interface SiteImage {
   uploadedAt: number;
 }
 
-import { Bouquet, CustomItem, Category, BouquetStyle } from './types';
+import {
+  Bouquet,
+  CustomItem,
+  Category,
+  BouquetStyle,
+  CartItem,
+  CustomBouquet,
+  Order,
+  OrderStatus,
+  Address,
+  SHIPPING_FEE,
+} from './types';
 
 export const getSiteImages = async (): Promise<SiteImage[]> => {
   const colRef = collection(firestore, 'site_images');
@@ -171,4 +183,79 @@ export const updateBouquetStyle = async (
 export const deleteBouquetStyle = async (id: string) => {
   const docRef = doc(firestore, 'bouquet_styles', id);
   await deleteDoc(docRef);
+};
+
+// --- Orders ---
+export interface CreateOrderInput {
+  userId: string | null;
+  items: CartItem[];
+  customerDetails: Order['customerDetails'];
+  shippingAddress: Address;
+}
+
+const generateOrderNumber = () => `BB-${Date.now().toString(36).toUpperCase()}`;
+
+export const createOrder = async (input: CreateOrderInput): Promise<Order> => {
+  const orderItems = input.items.map((cartItem) => {
+    const isCustom = cartItem.product.id === 'custom-bouquet';
+    return {
+      name: cartItem.product.name,
+      price: cartItem.product.price,
+      quantity: cartItem.quantity,
+      isCustom,
+      ...(isCustom && (cartItem.product as CustomBouquet).description
+        ? { details: (cartItem.product as CustomBouquet).description }
+        : {}),
+    };
+  });
+  const subtotal = orderItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  const orderData: Omit<Order, 'id'> = {
+    orderNumber: generateOrderNumber(),
+    userId: input.userId,
+    items: orderItems,
+    subtotal,
+    shippingFee: SHIPPING_FEE,
+    totalAmount: subtotal + SHIPPING_FEE,
+    shippingAddress: input.shippingAddress,
+    customerDetails: input.customerDetails,
+    status: 'Pending',
+    orderDate: new Date().toISOString(),
+  };
+
+  const colRef = collection(firestore, 'orders');
+  const docRef = await addDoc(colRef, orderData);
+  return { id: docRef.id, ...orderData };
+};
+
+export const getOrders = async (): Promise<Order[]> => {
+  const colRef = collection(firestore, 'orders');
+  const q = query(colRef, orderBy('orderDate', 'desc'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Order);
+};
+
+export const getOrdersByUser = async (uid: string): Promise<Order[]> => {
+  const colRef = collection(firestore, 'orders');
+  const q = query(colRef, where('userId', '==', uid));
+  const snapshot = await getDocs(q);
+  const results = snapshot.docs.map(
+    (doc) => ({ id: doc.id, ...doc.data() }) as Order
+  );
+  return results.sort((a, b) => (a.orderDate < b.orderDate ? 1 : -1));
+};
+
+export const getOrderById = async (id: string): Promise<Order | null> => {
+  const docRef = doc(firestore, 'orders', id);
+  const snapshot = await getDoc(docRef);
+  if (!snapshot.exists()) return null;
+  return { id: snapshot.id, ...snapshot.data() } as Order;
+};
+
+export const updateOrderStatus = async (id: string, status: OrderStatus) => {
+  const docRef = doc(firestore, 'orders', id);
+  await updateDoc(docRef, { status });
 };

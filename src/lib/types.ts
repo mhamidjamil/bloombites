@@ -10,7 +10,7 @@ export type Address = {
   street: string;
   city: string;
   province: string;
-  postalCode: string;
+  postalCode?: string;
 };
 
 export type Category = {
@@ -73,10 +73,29 @@ export type CustomBouquet = {
   instructions?: string;
 };
 
+// Shipping is flat-rate for now; centralized here so cart, checkout and
+// order totals never drift apart.
+export const SHIPPING_FEE = 250;
+
+export type OrderStatus = 'Pending' | 'Processing' | 'Completed' | 'Cancelled';
+
+// Snapshot of a cart line at the time an order was placed, so later edits to
+// a product's name/price never change what the customer actually ordered.
+export type OrderItem = {
+  name: string;
+  price: number;
+  quantity: number;
+  isCustom: boolean;
+  details?: string; // custom bouquet contents / style / instructions, if any
+};
+
 export type Order = {
   id: string;
-  userId: string;
-  items: CartItem[];
+  orderNumber: string;
+  userId: string | null; // null for guest checkout
+  items: OrderItem[];
+  subtotal: number;
+  shippingFee: number;
   totalAmount: number;
   shippingAddress: Address;
   customerDetails: {
@@ -84,8 +103,8 @@ export type Order = {
     email: string;
     phone: string;
   };
-  status: 'processing' | 'completed' | 'cancelled';
-  orderDate: Date;
+  status: OrderStatus;
+  orderDate: string; // ISO string
 };
 
 export type Testimonial = {

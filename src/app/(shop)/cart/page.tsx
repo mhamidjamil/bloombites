@@ -4,9 +4,9 @@ import useCartStore from '@/lib/cart-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
-import { placeholderImages } from '@/lib/placeholder-images';
-import { Minus, Plus, Trash2, ShoppingCart } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingCart, Gift } from 'lucide-react';
 import Link from 'next/link';
+import { SHIPPING_FEE } from '@/lib/types';
 
 export default function CartPage() {
   const { items, totalPrice, totalItems, updateQuantity, removeItem } =
@@ -29,7 +29,7 @@ export default function CartPage() {
             <ShoppingCart className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
             <h2 className="text-2xl font-semibold">Your cart is empty</h2>
             <p className="text-muted-foreground mt-2">
-              Looks like you haven't added any bouquets yet.
+              Looks like you haven&apos;t added any bouquets yet.
             </p>
             <Button asChild className="mt-6">
               <Link href="/shop">Start Shopping</Link>
@@ -40,29 +40,35 @@ export default function CartPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-4">
             {items.map((item) => {
-              const imageId =
-                'images' in item.product
-                  ? item.product.images[0]
-                  : 'custom-builder-promo';
-              const image = placeholderImages.find((p) => p.id === imageId);
+              const imageUrl =
+                'images' in item.product ? item.product.images?.[0] : undefined;
+              const isCustom = !('images' in item.product);
 
               return (
                 <Card key={item.id} className="flex items-center p-4">
-                  <div className="relative h-24 w-24 rounded-md overflow-hidden mr-4">
-                    {image && (
+                  <div className="relative h-24 w-24 rounded-md overflow-hidden mr-4 bg-muted flex items-center justify-center shrink-0">
+                    {imageUrl ? (
                       <Image
-                        src={image.imageUrl}
+                        src={imageUrl}
                         alt={item.product.name}
                         fill
                         className="object-cover"
+                        unoptimized={imageUrl.startsWith('http')}
                       />
+                    ) : (
+                      <Gift className="h-8 w-8 text-muted-foreground" />
                     )}
                   </div>
-                  <div className="flex-grow">
+                  <div className="flex-grow min-w-0">
                     <h3 className="font-bold text-lg">{item.product.name}</h3>
                     <p className="text-sm text-muted-foreground">
                       PKR {item.product.price.toLocaleString()}
                     </p>
+                    {isCustom && item.product.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                        {item.product.description}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1 border rounded-md p-1">
@@ -70,6 +76,7 @@ export default function CartPage() {
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6"
+                        aria-label="Decrease quantity"
                         onClick={() =>
                           updateQuantity(item.id, item.quantity - 1)
                         }
@@ -83,6 +90,7 @@ export default function CartPage() {
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6"
+                        aria-label="Increase quantity"
                         onClick={() =>
                           updateQuantity(item.id, item.quantity + 1)
                         }
@@ -93,6 +101,7 @@ export default function CartPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Remove item"
                       onClick={() => removeItem(item.id)}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -115,12 +124,12 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
-                    <span>PKR 250</span>
+                    <span>PKR {SHIPPING_FEE.toLocaleString()}</span>
                   </div>
                 </div>
                 <div className="border-t my-4 pt-4 flex justify-between items-center text-xl font-bold">
                   <span>Total</span>
-                  <span>PKR {(totalPrice + 250).toLocaleString()}</span>
+                  <span>PKR {(totalPrice + SHIPPING_FEE).toLocaleString()}</span>
                 </div>
                 <Button asChild size="lg" className="w-full mt-4">
                   <Link href="/checkout">Proceed to Checkout</Link>

@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 type CartState = {
   items: CartItem[];
+  hasHydrated: boolean;
   addItem: (product: Bouquet | CustomBouquet, quantity: number) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
@@ -15,25 +16,41 @@ type CartState = {
   totalPrice: number;
 };
 
+const calculateTotals = (items: CartItem[]) => {
+  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+  const totalPrice = items.reduce(
+    (acc, item) => acc + item.product.price * item.quantity,
+    0
+  );
+  return { totalItems, totalPrice };
+};
+
 const useCartStore = create<CartState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       items: [],
+      hasHydrated: false,
       totalItems: 0,
       totalPrice: 0,
 
       addItem: (product, quantity) => {
-        const cartItem: CartItem = {
-          id: uuidv4(),
-          product,
-          quantity,
-        };
         set((state) => {
+          if (product.id !== 'custom-bouquet') {
+            const existingIndex = state.items.findIndex(
+              (item) => item.product.id === product.id
+            );
+            if (existingIndex >= 0) {
+              const newItems = [...state.items];
+              newItems[existingIndex] = {
+                ...newItems[existingIndex],
+                quantity: newItems[existingIndex].quantity + quantity,
+              };
+              return { items: newItems, ...calculateTotals(newItems) };
+            }
+          }
+          const cartItem: CartItem = { id: uuidv4(), product, quantity };
           const newItems = [...state.items, cartItem];
-          return {
-            items: newItems,
-            ...calculateTotals(newItems),
-          };
+          return { items: newItems, ...calculateTotals(newItems) };
         });
       },
 
@@ -71,29 +88,20 @@ const useCartStore = create<CartState>()(
     {
       name: 'cart-storage',
       storage: createJSONStorage(() => localStorage),
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.totalItems = state.items.reduce(
-            (acc, item) => acc + item.quantity,
-            0
-          );
-          state.totalPrice = state.items.reduce(
-            (acc, item) => acc + item.product.price * item.quantity,
-            0
-          );
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('cart-store rehydration failed', {
+            operation: 'cart-store.rehydrate',
+            error,
+          });
         }
+        const totals = state
+          ? calculateTotals(state.items)
+          : { totalItems: 0, totalPrice: 0 };
+        useCartStore.setState({ ...totals, hasHydrated: true });
       },
     }
   )
 );
-
-const calculateTotals = (items: CartItem[]) => {
-  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
-  const totalPrice = items.reduce(
-    (acc, item) => acc + item.product.price * item.quantity,
-    0
-  );
-  return { totalItems, totalPrice };
-};
 
 export default useCartStore;
