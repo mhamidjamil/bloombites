@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Profile doc. Anyone can create their own on signup, forced to the
+    // 'customer' role; role can never change through a client write.
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role == 'customer';
+      allow update: if isOwner(uid)
+        && request.resource.data.role == resource.data.role;
+      allow delete: if false;
+    }
+
+    // Public catalog data. Admin CMS is the only writer.
+    match /products/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /custom_items/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /categories/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /bouquet_styles/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /content/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Internal image library for the CMS, not read by any public page.
+    match /site_images/{id} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // uid is set by the app to the creating user's uid, or null for a guest
+    // checkout. Status starts at 'Pending' and can only move forward by an
+    // admin changing that one field.
+    match /orders/{id} {
+      allow create: if request.resource.data.status == 'Pending'
+        && ((isSignedIn() && request.resource.data.userId == request.auth.uid)
+          || (!isSignedIn() && request.resource.data.userId == null));
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+      allow delete: if false;
+    }
+  }
+}

@@ -14,22 +14,25 @@ import {
 import { Slider } from '@/components/ui/slider';
 import getCroppedImg from '@/lib/image-utils';
 import imageCompression from 'browser-image-compression';
-import { Loader2, Upload, X } from 'lucide-react';
-import Image from 'next/image';
+import { Loader2, Upload } from 'lucide-react';
+import { useFirebaseAuth } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 interface ImageUploadProps {
   onUploadComplete: (url: string) => void;
   onError?: (error: string) => void;
   className?: string;
-  currentImage?: string;
 }
+
+const UPLOAD_TIMEOUT_MS = 20000;
 
 export default function ImageUpload({
   onUploadComplete,
   onError,
   className,
-  currentImage,
 }: ImageUploadProps) {
+  const auth = useFirebaseAuth();
+  const { toast } = useToast();
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -75,8 +78,23 @@ export default function ImageUpload({
     });
   };
 
+  const reportError = (message: string) => {
+    if (onError) {
+      onError(message);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Upload failed',
+        description: message,
+      });
+    }
+  };
+
   const handleUpload = async () => {
     if (!imageSrc) return;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
 
     try {
       setIsUploading(true);
@@ -92,13 +110,12 @@ export default function ImageUpload({
         // Use cropped image
         if (!croppedAreaPixels) return;
 
-        // 1. Get cropped image blob
         const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
         if (!croppedBlob) throw new Error('Could not crop image');
         fileToUpload = croppedBlob as File;
       }
 
-      // 2. Try to compress image (optional)
+      // Try to compress image (optional); output is always image/jpeg either way
       let fileToCompress = fileToUpload;
       try {
         const compressedFile = await imageCompression(fileToUpload, {
@@ -110,65 +127,69 @@ export default function ImageUpload({
         fileToCompress = compressedFile;
       } catch (compressionError) {
         console.warn(
-          'Image compression failed, uploading original file:',
+          'image-upload: compression failed, uploading original file',
           compressionError
         );
         // Continue with original file if compression fails
       }
 
-      // 3. Create FormData and upload directly to local API
-      const formData = new FormData();
-      formData.append('file', fileToCompress, 'image.jpg');
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) {
+        throw new Error('You must be signed in as an admin to upload images.');
+      }
 
-      const response = await fetch('/api/items/upload', {
+      const presignResponse = await fetch('/api/upload', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ contentType: 'image/jpeg' }),
+        signal: controller.signal,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to upload image');
+      if (!presignResponse.ok) {
+        const errorData = await presignResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to prepare the upload.');
       }
 
-      const { url } = await response.json();
+      const { uploadUrl, publicUrl } = await presignResponse.json();
 
-      // 4. Complete
-      onUploadComplete(url);
+      const putResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: fileToCompress,
+        signal: controller.signal,
+      });
+
+      if (!putResponse.ok) {
+        throw new Error('Failed to upload the image to storage.');
+      }
+
+      onUploadComplete(publicUrl);
       setIsOpen(false);
       setImageSrc(null);
-      // Removed toast here to prevent dialog interference
     } catch (error: any) {
-      console.error(error);
-      if (onError) {
-        onError(error.message || 'Something went wrong');
-      }
+      const message =
+        error?.name === 'AbortError'
+          ? 'Upload timed out. Please try again.'
+          : error?.message || 'Something went wrong uploading the image.';
+      console.error(
+        JSON.stringify({
+          operation: 'image-upload.handleUpload',
+          message,
+          timestamp: new Date().toISOString(),
+        })
+      );
+      reportError(message);
     } finally {
+      clearTimeout(timeoutId);
       setIsUploading(false);
     }
   };
 
   return (
     <div className={className}>
-      {currentImage ? (
-        <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden border bg-muted">
-          <Image
-            src={currentImage}
-            alt="Current image"
-            fill
-            className="object-cover"
-            unoptimized
-          />
-          <Button
-            variant="destructive"
-            size="icon"
-            className="absolute top-2 right-2 h-6 w-6"
-            onClick={() => onUploadComplete('')} // Or a dedicated remove handler
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      ) : null}
-
       <div className="flex items-center gap-4">
         <Button variant="outline" className="relative cursor-pointer" asChild>
           <label>
