@@ -1,0 +1,77 @@
+name: Deploy (LHR)
+
+# Pushing to main deploys to the Lahore server. The workflow only asks the
+# server to deploy and then streams its log back here; the build itself happens
+# on the server, against its own environment.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-lhr-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to LHR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger the deploy and follow its log
+        shell: bash
+        env:
+          DEPLOY_BASE: https://deploy-lahore.innovorix.com
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_SECRET }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${DEPLOY_TOKEN:-}" ]]; then
+            echo "::error::DEPLOY_SECRET is not set on this repository."
+            exit 1
+          fi
+
+          echo "Deploying $REPO@$REF ($SHA)"
+
+          code="$(curl -sS -o response.json -w '%{http_code}' -X POST "$DEPLOY_BASE/deploy" \
+            -H "X-Deploy-Token: $DEPLOY_TOKEN" \
+            -H 'Content-Type: application/json' \
+            --max-time 30 \
+            --data "{\"repo\":\"$REPO\",\"ref\":\"$REF\",\"sha\":\"$SHA\"}")"
+
+          cat response.json || true
+          if [[ "$code" != "200" && "$code" != "202" ]]; then
+            echo "::error::Deploy trigger failed (HTTP $code)"
+            exit 1
+          fi
+
+          id="$(jq -r '.deploy_id // empty' response.json)"
+          [[ -n "$id" ]] || { echo "::error::No deploy_id returned"; exit 1; }
+          echo "deploy_id=$id"
+
+          offset=0
+          for _ in $(seq 1 120); do
+            rm -f headers.txt chunk.txt
+            curl -sS -D headers.txt -o chunk.txt \
+              -H "X-Deploy-Token: $DEPLOY_TOKEN" \
+              "$DEPLOY_BASE/deploy/logs/$id?from=$offset&max=20000" || true
+
+            next="$(grep -i '^x-next-offset:' headers.txt | awk '{print $2}' | tr -d '\r' || true)"
+            [[ -n "$next" ]] && offset="$next"
+            [[ -s chunk.txt ]] && cat chunk.txt
+
+            status="$(curl -sS -H "X-Deploy-Token: $DEPLOY_TOKEN" "$DEPLOY_BASE/deploy/status/$id" \
+              | jq -r '.status // "unknown"' || echo unknown)"
+
+            case "$status" in
+              success) echo "Deploy finished successfully."; exit 0 ;;
+              failed)  echo "::error::Deploy failed on the server."; exit 1 ;;
+            esac
+            sleep 10
+          done
+
+          echo "::error::Deploy timed out."
+          exit 1
