@@ -8,6 +8,7 @@ import {
   useInView,
 } from 'framer-motion';
 import { useRef, ReactNode } from 'react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 interface ScrollRevealProps {
@@ -113,9 +114,15 @@ export const ParallaxImage = ({
   const scale = useTransform(scrollYProgress, [0, 0.5, 1], [1, 1.1, 1]);
 
   return (
-    <div ref={ref} className={cn('overflow-hidden', className)}>
-      <motion.div style={{ y, scale }} className="w-full h-full">
-        <img src={src} alt={alt} className="w-full h-full object-cover" />
+    <div ref={ref} className={cn('relative overflow-hidden', className)}>
+      <motion.div style={{ y, scale }} className="relative w-full h-full">
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          className="object-cover"
+          unoptimized={src.startsWith('http')}
+        />
       </motion.div>
     </div>
   );

@@ -3,12 +3,12 @@ import Link from 'next/link';
 
 const Footer = () => {
   return (
-    <footer className="bg-accent text-accent-foreground">
+    <footer className="bg-sidebar text-sidebar-foreground">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-2">
             <Logo />
-            <p className="mt-4 max-w-sm text-sm text-accent-foreground/80">
+            <p className="mt-4 max-w-sm text-sm text-sidebar-foreground/80">
               The perfect gift for any occasion. Handcrafted snack bouquets,
               delivered with love right to your doorstep.
             </p>
@@ -53,7 +53,7 @@ const Footer = () => {
             </ul>
           </div>
         </div>
-        <div className="mt-8 border-t border-accent-foreground/20 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-accent-foreground/60">
+        <div className="mt-8 border-t border-sidebar-foreground/20 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-sidebar-foreground/60">
           <p>
             &copy; {new Date().getFullYear()} BloomBites. All rights reserved.
           </p>

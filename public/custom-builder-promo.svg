@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4A2E23" />
+      <stop offset="100%" stop-color="#2A1712" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)" />
+
+  <!-- Bouquet wrap -->
+  <path
+    d="M330 560 L260 260 L400 180 L540 260 L470 560 Z"
+    fill="#1F140F"
+  />
+  <path d="M400 180 L330 560 L400 560 Z" fill="#2A1B14" opacity="0.6" />
+  <path d="M400 180 L470 560 L400 560 Z" fill="#150D0A" opacity="0.4" />
+
+  <!-- Snack items peeking out -->
+  <rect x="345" y="150" width="34" height="70" rx="4" fill="#FFD700" transform="rotate(-8 362 185)" />
+  <rect x="390" y="130" width="34" height="90" rx="4" fill="#D9A441" transform="rotate(3 407 175)" />
+  <rect x="430" y="150" width="34" height="70" rx="4" fill="#FFD700" transform="rotate(10 447 185)" />
+  <circle cx="365" cy="205" r="10" fill="#C77B3B" />
+  <circle cx="440" cy="205" r="10" fill="#C77B3B" />
+
+  <!-- Ribbon knot -->
+  <path
+    d="M400 400 L340 440 L400 460 L460 440 Z"
+    fill="#FFD700"
+  />
+  <circle cx="400" cy="440" r="14" fill="#3E2723" stroke="#FFD700" stroke-width="4" />
+
+  <!-- Brand mark -->
+  <text
+    x="400"
+    y="60"
+    text-anchor="middle"
+    font-family="Georgia, 'Playfair Display', serif"
+    font-weight="700"
+    font-size="34"
+    fill="#FFD700"
+  >BloomBites</text>
+  <text
+    x="400"
+    y="90"
+    text-anchor="middle"
+    font-family="Georgia, serif"
+    font-size="16"
+    fill="#E7D8C9"
+    opacity="0.8"
+  >Build Your Own Bouquet</text>
+</svg>

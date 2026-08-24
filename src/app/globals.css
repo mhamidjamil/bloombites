@@ -16,8 +16,8 @@
     --secondary-foreground: 10 30% 12%;
     --muted: 60 25% 85%;
     --muted-foreground: 10 30% 35%;
-    --accent: 10 30% 19%; /* Dark Chocolate Brown */
-    --accent-foreground: 60 56% 91%;
+    --accent: 60 25% 85%; /* Subtle hover tint, near-muted */
+    --accent-foreground: 10 30% 12%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 60 20% 80%;
@@ -52,8 +52,8 @@
     --secondary-foreground: 60 56% 91%;
     --muted: 10 30% 20%;
     --muted-foreground: 60 56% 70%;
-    --accent: 60 56% 91%;
-    --accent-foreground: 10 30% 12%;
+    --accent: 10 30% 20%; /* Subtle hover tint, near-muted */
+    --accent-foreground: 60 56% 91%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 10 30% 25%;

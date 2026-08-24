@@ -2,12 +2,12 @@
 
 A modern, AI-powered e-commerce platform for custom snack bouquets. Create personalized gift experiences with our intuitive bouquet builder, powered by Google Gemini AI for creative descriptions and naming.
 
-![Next.js](https://img.shields.io/badge/Next.js-15.3.6-black)
-![React](https://img.shields.io/badge/React-19.2.1-blue)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
-![Firebase](https://img.shields.io/badge/Firebase-11.9.1-orange)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.1-38B2AC)
-![Google GenAI](https://img.shields.io/badge/Google_GenAI-1.20.0-green)
+![Next.js](https://img.shields.io/badge/Next.js-16-black)
+![React](https://img.shields.io/badge/React-19-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![Firebase](https://img.shields.io/badge/Firebase-12-orange)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC)
+![Genkit](https://img.shields.io/badge/Genkit-1.41-green)
 
 ## 🌟 Features
 
@@ -213,16 +213,20 @@ Built with Radix UI primitives and styled with Tailwind CSS for accessibility an
 
 ## 🚀 Deployment
 
-### Firebase Hosting
+### VPS via GitHub Actions
 
-```bash
-npm run build
-firebase deploy
-```
+The app deploys to a self-hosted VPS (Lahore). A GitHub Actions workflow builds
+the app and calls a deploy webhook on every push to `main`, which pulls the
+latest code on the server, runs `npm run build`, and restarts the Node process
+behind the reverse proxy.
+
+No Firebase Hosting or App Hosting is involved; Firebase is used only for
+Auth and Firestore, and Cloudflare R2 for image storage.
 
 ### Environment Variables
 
-Ensure all environment variables are set in your deployment environment.
+Ensure all environment variables are set on the VPS (Firebase config, R2
+credentials, Google GenAI key). None of them are committed to the repo.
 
 ## 🤝 Contributing
 

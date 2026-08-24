@@ -1,28 +1,25 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect, useLayoutEffect, useState } from 'react';
-import { cn } from '@/lib/utils'; // Keep inconsistent usage in mind
+import { useEffect, useState } from 'react';
 
 interface SiteLoaderProps {
   isLoading: boolean;
   onLoadingComplete?: () => void;
 }
 
+function hasSeenIntro() {
+  if (typeof window === 'undefined') return false;
+  return sessionStorage.getItem('bloom_intro_seen') === 'true';
+}
+
 export function SiteLoader({ isLoading, onLoadingComplete }: SiteLoaderProps) {
+  const [skipExit] = useState(hasSeenIntro);
+  const [show, setShow] = useState(() => !hasSeenIntro());
   const [progress, setProgress] = useState(0);
-  const [show, setShow] = useState(true);
-  const [skipExit, setSkipExit] = useState(false);
 
-  useLayoutEffect(() => {
-    const hasSeen =
-      typeof window !== 'undefined'
-        ? sessionStorage.getItem('bloom_intro_seen')
-        : null;
-
-    if (hasSeen) {
-      setSkipExit(true);
-      setShow(false);
+  useEffect(() => {
+    if (skipExit) {
       onLoadingComplete?.();
       return;
     }
@@ -38,9 +35,7 @@ export function SiteLoader({ isLoading, onLoadingComplete }: SiteLoaderProps) {
         const next = prev + increment;
         if (next >= 100) {
           clearInterval(timer);
-          if (typeof window !== 'undefined') {
-            sessionStorage.setItem('bloom_intro_seen', 'true');
-          }
+          sessionStorage.setItem('bloom_intro_seen', 'true');
           return 100;
         }
         return next;
@@ -48,7 +43,7 @@ export function SiteLoader({ isLoading, onLoadingComplete }: SiteLoaderProps) {
     }, interval);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [skipExit, onLoadingComplete]);
 
   useEffect(() => {
     if (!show) return; // Don't run logic if already hidden
