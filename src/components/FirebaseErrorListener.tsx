@@ -26,9 +26,9 @@ const FirebaseErrorListener: React.FC = () => {
       );
       toast({
         variant: 'destructive',
-        title: 'Permission Denied',
+        title: 'Something went wrong',
         description:
-          "You don't have permission to perform this action. Check Firestore rules.",
+          'Something went wrong saving your changes. Please try again.',
       });
     };
 

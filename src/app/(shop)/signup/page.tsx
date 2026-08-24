@@ -12,34 +12,59 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/lib/auth-context';
+import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
-export default function SignupPage() {
+function getSafeRedirect(redirect: string | null): string {
+  if (redirect && redirect.startsWith('/')) {
+    return redirect;
+  }
+  return '/';
+}
+
+function SignupForm() {
   const { signup } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  const passwordsMismatch =
+    confirmPassword.length > 0 && password !== confirmPassword;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      await signup(email, password);
-      router.push('/');
-    } catch (error: any) {
-      console.error(error);
+    if (password !== confirmPassword) {
       toast({
         variant: 'destructive',
         title: 'Signup Failed',
-        description: error.message || 'An unexpected error occurred.',
+        description: 'Passwords do not match.',
+      });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await signup(name, email, password);
+      const redirectParam = searchParams.get('redirect');
+      router.push(redirectParam ? getSafeRedirect(redirectParam) : '/');
+    } catch (error: any) {
+      console.error('signup: create account failed', {
+        code: error?.code,
+        email,
+      });
+      toast({
+        variant: 'destructive',
+        title: 'Signup Failed',
+        description: getAuthErrorMessage(error),
       });
     } finally {
       setIsSubmitting(false);
@@ -88,6 +113,7 @@ export default function SignupPage() {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   required
+                  minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pr-10"
@@ -104,6 +130,25 @@ export default function SignupPage() {
                   )}
                 </button>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Must be at least 6 characters.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                minLength={6}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              {passwordsMismatch && (
+                <p className="text-xs text-destructive">
+                  Passwords do not match.
+                </p>
+              )}
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
@@ -123,5 +168,13 @@ export default function SignupPage() {
         </form>
       </Card>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupForm />
+    </Suspense>
   );
 }

@@ -6,6 +6,7 @@ import {
   User as UserIcon,
   LogOut,
   LayoutDashboard,
+  ListOrdered,
   Menu,
   Sun,
   Moon,
@@ -14,8 +15,13 @@ import { Button } from './ui/button';
 import Logo from './logo';
 import { useAuth } from '@/lib/auth-context';
 import useCartStore from '@/lib/cart-store';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { useState, useEffect } from 'react';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { useSyncExternalStore } from 'react';
 import { ThemeToggle } from './theme-toggle';
 import { useTheme } from 'next-themes';
 import {
@@ -27,20 +33,27 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+const subscribeNoop = () => () => {};
+function useIsClient() {
+  return useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false
+  );
+}
+
 const Header = () => {
   const { user, logout } = useAuth();
   const { totalItems } = useCartStore();
-  const [isClient, setIsClient] = useState(false);
+  const isClient = useIsClient();
   const { setTheme, theme } = useTheme();
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const navLinks = [
     { href: '/shop', label: 'Shop' },
     { href: '/build', label: 'Build Your Own' },
   ];
+
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Account';
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
@@ -62,7 +75,7 @@ const Header = () => {
 
         <div className="flex items-center gap-2 md:gap-4">
           <Button asChild variant="ghost" size="icon">
-            <Link href="/cart">
+            <Link href="/cart" className="relative">
               <ShoppingCart className="h-5 w-5" />
               {isClient && totalItems > 0 && (
                 <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
@@ -89,7 +102,7 @@ const Header = () => {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {user.email?.split('@')[0]}
+                      {displayName}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user.email}
@@ -105,6 +118,12 @@ const Header = () => {
                     </Link>
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem asChild>
+                  <Link href="/orders" className="cursor-pointer">
+                    <ListOrdered className="mr-2 h-4 w-4" />
+                    <span>My Orders</span>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 >
@@ -150,21 +169,34 @@ const Header = () => {
                   <Logo />
                   <nav className="flex flex-col gap-4 text-lg font-medium">
                     {navLinks.map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        className="text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        {link.label}
-                      </Link>
+                      <SheetClose asChild key={link.href}>
+                        <Link
+                          href={link.href}
+                          className="text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          {link.label}
+                        </Link>
+                      </SheetClose>
                     ))}
+                    {user && (
+                      <SheetClose asChild>
+                        <Link
+                          href="/orders"
+                          className="text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          My Orders
+                        </Link>
+                      </SheetClose>
+                    )}
                     {user && user.role === 'admin' && (
-                      <Link
-                        href="/admin"
-                        className="text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        Admin
-                      </Link>
+                      <SheetClose asChild>
+                        <Link
+                          href="/admin"
+                          className="text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          Admin
+                        </Link>
+                      </SheetClose>
                     )}
                   </nav>
                 </div>

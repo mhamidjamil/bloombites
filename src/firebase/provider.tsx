@@ -42,7 +42,7 @@ export function useFirebaseApp() {
   return useFirebase().app;
 }
 
-export function useAuth() {
+export function useFirebaseAuth() {
   return useFirebase().auth;
 }
 

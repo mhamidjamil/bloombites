@@ -12,15 +12,24 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/lib/auth-context';
+import { getAuthErrorMessage } from '@/lib/auth-errors';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
 
-export default function LoginPage() {
+function getSafeRedirect(redirect: string | null): string {
+  if (redirect && redirect.startsWith('/')) {
+    return redirect;
+  }
+  return '/';
+}
+
+function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState('');
@@ -32,20 +41,14 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await login(email, password);
-      router.push('/');
+      const redirectParam = searchParams.get('redirect');
+      router.push(redirectParam ? getSafeRedirect(redirectParam) : '/');
     } catch (error: any) {
-      console.error(error);
-      let errorMessage = error.message || 'An unexpected error occurred.';
-      if (
-        error.code === 'auth/invalid-credential' ||
-        error.message.includes('auth/invalid-credential')
-      ) {
-        errorMessage = 'Invalid email or password. Please try again.';
-      }
+      console.error('login: sign in failed', { code: error?.code, email });
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: errorMessage,
+        description: getAuthErrorMessage(error),
       });
     } finally {
       setIsSubmitting(false);
@@ -77,7 +80,15 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <Input
                   id="password"
@@ -118,5 +129,13 @@ export default function LoginPage() {
         </form>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
