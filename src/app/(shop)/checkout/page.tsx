@@ -115,6 +115,14 @@ export default function CheckoutPage() {
           province: values.province,
         },
       });
+      try {
+        sessionStorage.setItem(
+          `bloombites:order:${order.id}`,
+          JSON.stringify(order)
+        );
+      } catch {
+        // storage unavailable; signed-in users still load from Firestore
+      }
       setOrderPlaced(true);
       clearCart();
       router.push(`/order-confirmation/${order.id}`);

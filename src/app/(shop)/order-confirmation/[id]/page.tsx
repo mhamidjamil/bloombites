@@ -18,6 +18,18 @@ export default function OrderConfirmationPage() {
 
   const load = async () => {
     setStatus('loading');
+    // Guests cannot read orders from Firestore, so checkout leaves the order
+    // it just created in sessionStorage for this page.
+    try {
+      const cached = sessionStorage.getItem(`bloombites:order:${params.id}`);
+      if (cached) {
+        setOrder(JSON.parse(cached) as Order);
+        setStatus('ready');
+        return;
+      }
+    } catch {
+      // fall through to Firestore
+    }
     try {
       const result = await getOrderById(params.id);
       if (!result) {

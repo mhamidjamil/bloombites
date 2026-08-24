@@ -25,7 +25,9 @@ service cloud.firestore {
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.role == 'customer';
       allow update: if isOwner(uid)
-        && request.resource.data.role == resource.data.role;
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email;
       allow delete: if false;
     }
 
@@ -71,7 +73,8 @@ service cloud.firestore {
       allow read: if isAdmin()
         || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow update: if isAdmin()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in ['Pending', 'Processing', 'Completed', 'Cancelled'];
       allow delete: if false;
     }
   }
