@@ -1,6 +1,7 @@
 @AGENTS.md
 
 <!-- CLAUDE-KNOWLEDGE-BLOCK:START (managed by ~/.claude/knowledge - do not edit by hand) -->
+
 ## Central knowledge (read this first)
 
 This project does not hold its own copy of the working rules or the lessons
@@ -37,6 +38,7 @@ applying, so the learning is visible and not just the result.
 
 If `~/.claude/knowledge/` is missing on this machine, clone it:
 `git clone https://github.com/hamidjamil0420/claude-knowledge.git ~/.claude/knowledge`
+
 <!-- CLAUDE-KNOWLEDGE-BLOCK:END -->
 
 ## What this project is
